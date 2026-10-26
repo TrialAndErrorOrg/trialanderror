@@ -54,7 +54,7 @@
     "remark-gfm": "catalog:",
     "remark-toc": "catalog:",
     "turbo": "^2.11.7",
-    "typedoc": "^0.23.28",
+    "typedoc": "^0.28.20",
     "typedoc-plugin-markdown": "4.0.0-next.3",
     "typescript": "7.1.0-dev.20261004.1",
     "unist-util-visit": "catalog:",
