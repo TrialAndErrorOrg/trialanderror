@@ -43,7 +43,7 @@
     "@types/unist": "catalog:",
     "@types/xast": "catalog:",
     "bcp-47-match": "^2.0.1",
-    "comma-separated-tokens": "^2.0.2",
+    "comma-separated-tokens": "^2.0.3",
     "css-selector-parser": "^1.4.1",
     "direction": "^2.0.1",
     "nth-check": "^2.1.1",
