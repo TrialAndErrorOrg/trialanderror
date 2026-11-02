@@ -1,0 +1,94 @@
+---
+import GithubSlugger from "github-slugger";
+import type { Section } from "~/content.config";
+import Blocks from "../blocks/Blocks.astro";
+import SectionHeading from "./SectionHeading.astro";
+
+/*
+ * Cards to pick from, on the left; the chosen one's panel on the right.
+ * Without JavaScript all panels show, one under the other.
+ */
+
+type Props = Extract<Section, { type: "chooser" }>;
+const { id, eyebrow, title, intro, groups: rawGroups } = Astro.props;
+
+const slugger = new GithubSlugger();
+const groups = rawGroups.map((group) => ({
+	...group,
+	options: group.options.map((option) => ({ ...option, id: option.id || slugger.slug(option.title) })),
+}));
+const options = groups.flatMap((g) => g.options);
+const first = options[0]?.id;
+---
+
+<section id={id} class="page scroll-mt-24 py-12">
+	<SectionHeading eyebrow={eyebrow} title={title} intro={intro} />
+	<div data-switch class="grid items-start gap-8 lg:grid-cols-[minmax(18rem,26rem)_1fr]">
+		<div class="flex flex-col gap-8">
+			{
+				groups.map((group) => (
+					<div class="flex flex-col gap-3">
+						{(group.title || group.note) && (
+							<div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+								{group.title && <h3 class="font-heading text-lg font-extrabold">{group.title}</h3>}
+								{group.note && <span class="text-sm text-muted">{group.note}</span>}
+							</div>
+						)}
+						{group.options.map((option) => (
+							<button
+								type="button"
+								data-switch-to={option.id}
+								data-tone={option.tone}
+								aria-pressed={option.id === first ? "true" : "false"}
+								aria-controls={option.id}
+								class="group/option flex cursor-pointer flex-col gap-2 border-frame border-ink bg-paper p-4 text-left shadow-hard transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-hard-lg aria-pressed:translate-x-0 aria-pressed:translate-y-0 aria-pressed:bg-ink aria-pressed:text-paper aria-pressed:shadow-none data-[tone=journal]:aria-pressed:bg-journal"
+							>
+								<span class="flex flex-wrap items-baseline justify-between gap-3">
+									<span class="font-heading text-2xl leading-tight font-black">{option.title}</span>
+									{option.badge && <span class="border-[1.5px] border-current px-2 py-0.5 text-xs font-bold tracking-wide uppercase">{option.badge}</span>}
+								</span>
+								{option.summary && <span class="text-[0.95rem] opacity-85">{option.summary}</span>}
+								{option.facts.length > 0 && (
+									<span class="flex flex-col gap-1 border-t border-current pt-2 text-sm">
+										{option.facts.map((fact) => (
+											<span>
+												<strong>{fact.label}:</strong> {fact.value}
+											</span>
+										))}
+									</span>
+								)}
+							</button>
+						))}
+					</div>
+				))
+			}
+		</div>
+
+		<div class="min-w-0 lg:sticky lg:top-28">
+			{
+				options.map((option) => (
+					<div
+						data-switch-panel
+						id={option.id}
+						hidden={option.id !== first}
+						class="mb-8 scroll-mt-28 border-frame border-ink bg-paper shadow-[8px_8px_0_var(--color-journal)] last:mb-0"
+					>
+						<div class:list={["flex flex-wrap items-baseline justify-between gap-x-5 gap-y-1 px-6 py-4 text-paper md:px-7", option.tone === "journal" ? "bg-journal" : "bg-ink"]}>
+							<h3 class="font-heading text-2xl font-black">{option.heading ?? option.title}</h3>
+							{option.note && <span class="text-sm">{option.note}</span>}
+						</div>
+						<div class="flex flex-col gap-7 p-6 md:p-7">
+							<Blocks blocks={option.blocks} />
+						</div>
+					</div>
+				))
+			}
+		</div>
+	</div>
+</section>
+
+<noscript><style is:inline>[data-switch-panel][hidden] { display: block; }</style></noscript>
+
+<script>
+	import "../blocks/switch";
+</script>

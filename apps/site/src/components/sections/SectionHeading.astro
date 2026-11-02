@@ -1,0 +1,23 @@
+---
+import Markdown from "../Markdown.astro";
+
+interface Props {
+	eyebrow?: string;
+	title?: string;
+	intro?: string;
+}
+
+/* The top of a structured section: "Step 1", the title, a line or two of text */
+const { eyebrow, title, intro } = Astro.props;
+---
+
+{
+	(eyebrow || title || intro) && (
+		<div class="mb-8 flex max-w-3xl flex-col gap-3">
+			{eyebrow && <span class="font-heading text-sm font-extrabold tracking-widest text-journal uppercase">{eyebrow}</span>}
+			{title && <h2 class="font-heading text-4xl leading-none font-black tracking-tighter md:text-5xl">{title}</h2>}
+			{intro && <Markdown text={intro} class="card-text text-lg" />}
+			<slot />
+		</div>
+	)
+}

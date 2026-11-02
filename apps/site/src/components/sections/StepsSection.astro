@@ -1,0 +1,53 @@
+---
+import GithubSlugger from "github-slugger";
+import type { Section } from "~/content.config";
+import Markdown from "../Markdown.astro";
+import Steps from "../blocks/Steps.astro";
+import SectionHeading from "./SectionHeading.astro";
+
+type Props = Extract<Section, { type: "steps" }>;
+const { id, eyebrow, title, intro, routes, note } = Astro.props;
+
+// Several routes become tabs; each needs an id so a link can open it
+const slugger = new GithubSlugger();
+const tabs = routes.map((route, i) => ({ ...route, id: slugger.slug(`${id ?? "steps"}-${route.label || i + 1}`) }));
+---
+
+<section id={id} class="page scroll-mt-24 py-12">
+	<SectionHeading eyebrow={eyebrow} title={title} intro={intro} />
+	{
+		tabs.length > 1 ? (
+			<div data-switch class="flex flex-col gap-6">
+				<div role="group" aria-label="Choose a route" class="flex flex-wrap">
+					{tabs.map((tab, i) => (
+						<button
+							type="button"
+							data-switch-to={tab.id}
+							aria-pressed={i === 0 ? "true" : "false"}
+							class="-ml-(--frame) cursor-pointer border-frame border-ink bg-paper px-5 py-2.5 font-bold first:ml-0 hover:bg-journal-soft aria-pressed:bg-ink aria-pressed:text-paper"
+						>
+							{tab.label}
+						</button>
+					))}
+				</div>
+				{tabs.map((tab, i) => (
+					<div data-switch-panel id={tab.id} hidden={i > 0} class="scroll-mt-28">
+						<noscript>
+							<h3 class="mb-3 font-heading text-xl font-extrabold">{tab.label}</h3>
+						</noscript>
+						<Steps steps={tab.steps} />
+					</div>
+				))}
+			</div>
+		) : (
+			tabs[0] && <Steps steps={tabs[0].steps} />
+		)
+	}
+	{note && <Markdown text={note} class="card-text mt-6 max-w-3xl" />}
+</section>
+
+<noscript><style is:inline>[data-switch-panel][hidden] { display: block; } [data-switch-to] { display: none; }</style></noscript>
+
+<script>
+	import "../blocks/switch";
+</script>

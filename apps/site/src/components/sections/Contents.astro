@@ -1,0 +1,22 @@
+---
+interface Props {
+	title: string;
+	/** The sections after this one that have an anchor and a title */
+	links: { id: string; label: string }[];
+}
+
+const { title, links } = Astro.props;
+---
+
+<nav aria-label={title} class="page pt-10 pb-2">
+	<div class="flex flex-wrap items-center gap-2.5 border-y-frame border-ink py-3.5">
+		<span class="mr-2 font-heading text-sm font-black tracking-wider uppercase">{title}</span>
+		{
+			links.map((link, i) => (
+				<a href={`#${link.id}`} class="border-[1.5px] border-ink px-3 py-1.5 text-[0.95rem] font-semibold hover:bg-journal-soft">
+					{i + 1} · {link.label}
+				</a>
+			))
+		}
+	</div>
+</nav>

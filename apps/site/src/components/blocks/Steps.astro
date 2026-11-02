@@ -1,0 +1,26 @@
+---
+import type { Step } from "~/content.config";
+import Markdown from "../Markdown.astro";
+
+interface Props {
+	steps: Step[];
+}
+
+const { steps } = Astro.props;
+---
+
+<ol class="grid gap-3" style="grid-template-columns: repeat(auto-fit, minmax(min(8rem, 100%), 1fr))">
+	{
+		steps.map((step, i) => (
+			<li class:list={["flex flex-col gap-2 border-frame border-ink p-4", step.highlight ? "bg-journal text-paper" : "bg-paper"]}>
+				{step.kicker ? (
+					<span class="text-xs font-bold tracking-wide uppercase">{step.kicker}</span>
+				) : (
+					<span class="font-heading text-3xl leading-none font-black">{i + 1}</span>
+				)}
+				<strong class="font-heading text-lg leading-tight font-extrabold">{step.title}</strong>
+				{step.text && <Markdown text={step.text} class="card-text text-sm" />}
+			</li>
+		))
+	}
+</ol>

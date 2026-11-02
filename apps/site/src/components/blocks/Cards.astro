@@ -1,0 +1,66 @@
+---
+import type { Card } from "~/content.config";
+import Markdown from "../Markdown.astro";
+import More from "./More.astro";
+import { badge, badgeClass, statusLabels } from "./status";
+
+interface Props {
+	items: Card[];
+	/** Narrowest a card gets before the grid wraps */
+	min?: string;
+	/** Most cards side by side */
+	columns?: number;
+}
+
+const { items, min = "16rem", columns } = Astro.props;
+// Cards wrap below `min`, and never more than `columns` sit in a row
+const narrowest = columns ? `max(min(${min}, 100%), calc((100% - ${columns - 1} * 1.25rem) / ${columns}))` : `min(${min}, 100%)`;
+
+// A card with a status takes its frame from it unless it sets a look of its own
+const frame = (card: Card) => {
+	if (card.look !== "box") return looks[card.look];
+	if (card.status === "recommended") return "border-frame border-journal";
+	if (card.status === "not-needed") return "border-frame border-dashed border-muted";
+	return looks.box;
+};
+const looks = {
+	box: "border-frame border-ink",
+	headed: "border-frame border-ink shadow-hard",
+	soft: "bg-journal-soft",
+	dashed: "border-frame border-dashed border-ink",
+	rule: "border-t-frame border-ink !px-0 !pb-0",
+	plain: "!p-0",
+};
+---
+
+<div class="grid gap-5" style={`grid-template-columns: repeat(auto-fit, minmax(${narrowest}, 1fr))`}>
+	{
+		items.map((card) => (
+			<div class:list={["flex flex-col gap-3 bg-paper", card.look !== "headed" && "p-5", frame(card)]}>
+				{card.look === "headed" ? (
+					<h3 class="bg-ink px-5 py-3 font-heading text-2xl font-black text-paper">{card.title}</h3>
+				) : (
+					<>
+						{(card.status || card.badge) && (
+							<span
+								class:list={[badge, badgeClass[card.status ?? "required"]]}
+							>
+								{card.badge ?? statusLabels[card.status!]}
+							</span>
+						)}
+						<h3 class="font-heading text-xl leading-tight font-extrabold">{card.title}</h3>
+					</>
+				)}
+				{card.body && <Markdown text={card.body} class:list={["card-text", card.look === "headed" && "px-5 pb-5"]} />}
+				{card.tags.length > 0 && (
+					<ul class="flex flex-wrap gap-1.5">
+						{card.tags.map((tag) => (
+							<li class="tag font-normal">{tag}</li>
+						))}
+					</ul>
+				)}
+				{card.more && <More label={card.more.label} body={card.more.body} small />}
+			</div>
+		))
+	}
+</div>
