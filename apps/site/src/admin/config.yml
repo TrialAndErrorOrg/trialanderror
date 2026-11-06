@@ -203,6 +203,7 @@ collections:
                       - name: blocks
                         label: Panel content
                         label_singular: Block
+                        hint: Leave empty for a card that only informs, with nothing to open
                         widget: list
                         typeKey: type
                         types:
@@ -250,7 +251,7 @@ collections:
                                       - { label: Dashed frame, value: dashed }
                                       - { label: Line on top, value: rule }
                                       - { label: No frame, value: plain }
-                                  - { name: tags, label: Small boxed words under the text, widget: list, required: false }
+                                  - { name: tags, label: Small boxed words under the text, widget: list, required: false, hint: "Separate with commas. For a link, write [Word](https://…)" }
                                   - name: more
                                     label: Extra text that opens on click
                                     widget: object

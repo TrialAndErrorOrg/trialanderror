@@ -52,11 +52,13 @@ page, there are also:
 - **Chooser**: cards to pick from, each opening its own panel beside them
   ("What are you submitting?"). A panel holds text, numbered parts, cards,
   steps and "read more" boxes. Each card has an anchor, so
-  `/journal/for-authors#registered-report` opens that card's panel.
+  `/journal/for-authors#registered-report` opens that card's panel. A card
+  with no panel content is a plain card that opens nothing.
 - **Cards**: boxes in a grid, optionally marked Required, Recommended or Not
   needed, with a key above them if you tick it. Each card can be framed,
   tinted, dashed, titled in a dark bar or have only a line on top, and can
-  have small tags and extra text that opens on click.
+  have small tags and extra text that opens on click. A tag can be a link:
+  `[Methodology](https://credit.niso.org/contributor-roles/methodology/)`.
 - **Steps**: a numbered process. Several routes (Standard, Perspective,
   Registered Report) become tabs.
 

@@ -1,4 +1,5 @@
 ---
+import { marked } from "marked";
 import type { Card } from "~/content.config";
 import Markdown from "../Markdown.astro";
 import More from "./More.astro";
@@ -55,7 +56,7 @@ const looks = {
 				{card.tags.length > 0 && (
 					<ul class="flex flex-wrap gap-1.5">
 						{card.tags.map((tag) => (
-							<li class="tag font-normal">{tag}</li>
+							<li class="tag font-normal" set:html={marked.parseInline(tag)} />
 						))}
 					</ul>
 				)}

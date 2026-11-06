@@ -35,6 +35,7 @@ const card = z.object({
 	/** box: framed; headed: title in a dark bar; soft: tinted; dashed; rule: a line on top; plain: nothing */
 	look: z.enum(["box", "headed", "soft", "dashed", "rule", "plain"]).default("box"),
 	/** Small boxed words under the text (CRediT roles) */
+	/** Markdown, so a tag can be a link: [Methodology](https://…) */
 	tags: z.array(z.string()).default([]),
 	/** Extra text that opens on click */
 	more: z.object({ label: z.string(), body: z.string() }).optional(),

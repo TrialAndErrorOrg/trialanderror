@@ -6,7 +6,8 @@ import SectionHeading from "./SectionHeading.astro";
 
 /*
  * Cards to pick from, on the left; the chosen one's panel on the right.
- * Without JavaScript all panels show, one under the other.
+ * An option with no blocks has no panel, so it is a plain card instead of
+ * a button. Without JavaScript all panels show, one under the other.
  */
 
 type Props = Extract<Section, { type: "chooser" }>;
@@ -17,8 +18,9 @@ const groups = rawGroups.map((group) => ({
 	...group,
 	options: group.options.map((option) => ({ ...option, id: option.id || slugger.slug(option.title) })),
 }));
-const options = groups.flatMap((g) => g.options);
+const options = groups.flatMap((g) => g.options).filter((option) => option.blocks.length > 0);
 const first = options[0]?.id;
+const card = "flex flex-col gap-2 border-frame border-ink bg-paper p-4 text-left";
 ---
 
 <section id={id} class="page scroll-mt-24 py-12">
@@ -34,15 +36,9 @@ const first = options[0]?.id;
 								{group.note && <span class="text-sm text-muted">{group.note}</span>}
 							</div>
 						)}
-						{group.options.map((option) => (
-							<button
-								type="button"
-								data-switch-to={option.id}
-								data-tone={option.tone}
-								aria-pressed={option.id === first ? "true" : "false"}
-								aria-controls={option.id}
-								class="group/option flex cursor-pointer flex-col gap-2 border-frame border-ink bg-paper p-4 text-left shadow-hard transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-hard-lg aria-pressed:translate-x-0 aria-pressed:translate-y-0 aria-pressed:bg-ink aria-pressed:text-paper aria-pressed:shadow-none data-[tone=journal]:aria-pressed:bg-journal"
-							>
+						{group.options.map((option) => {
+							const body = (
+								<>
 								<span class="flex flex-wrap items-baseline justify-between gap-3">
 									<span class="font-heading text-2xl leading-tight font-black">{option.title}</span>
 									{option.badge && <span class="border-[1.5px] border-current px-2 py-0.5 text-xs font-bold tracking-wide uppercase">{option.badge}</span>}
@@ -57,8 +53,23 @@ const first = options[0]?.id;
 										))}
 									</span>
 								)}
-							</button>
-						))}
+								</>
+							);
+							return option.blocks.length > 0 ? (
+								<button
+									type="button"
+									data-switch-to={option.id}
+									data-tone={option.tone}
+									aria-pressed={option.id === first ? "true" : "false"}
+									aria-controls={option.id}
+									class={`${card} group/option cursor-pointer shadow-hard transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-hard-lg aria-pressed:translate-x-0 aria-pressed:translate-y-0 aria-pressed:bg-ink aria-pressed:text-paper aria-pressed:shadow-none data-[tone=journal]:aria-pressed:bg-journal`}
+								>
+									{body}
+								</button>
+							) : (
+								<div class={card}>{body}</div>
+							);
+						})}
 					</div>
 				))
 			}
