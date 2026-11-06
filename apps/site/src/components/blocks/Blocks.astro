@@ -1,0 +1,41 @@
+---
+import type { Block } from "~/content.config";
+import Markdown from "../Markdown.astro";
+import Cards from "./Cards.astro";
+import More from "./More.astro";
+import Steps from "./Steps.astro";
+
+interface Props {
+	blocks: Block[];
+}
+
+const { blocks } = Astro.props;
+---
+
+{
+	blocks.map((block) => {
+		switch (block.type) {
+			case "text":
+				return <Markdown text={block.body} class="card-text max-w-3xl" />;
+			case "parts":
+				return (
+					<ol class="border-[1.5px] border-ink">
+						{block.items.map((part, i) => (
+							<li class="flex flex-wrap gap-x-6 gap-y-1 border-ink px-4 py-3 not-last:border-b-[1.5px] even:bg-journal-soft">
+								<strong class="shrink-0 basis-48">
+									{i + 1} · {part.title}
+								</strong>
+								{part.text && <Markdown text={part.text} class="card-text min-w-0 flex-1 basis-64" />}
+							</li>
+						))}
+					</ol>
+				);
+			case "cards":
+				return <Cards items={block.items} min="14rem" columns={block.columns} />;
+			case "steps":
+				return <Steps steps={block.steps} />;
+			case "more":
+				return <More label={block.label} body={block.body} />;
+		}
+	})
+}

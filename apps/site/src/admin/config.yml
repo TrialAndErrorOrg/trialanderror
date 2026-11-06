@@ -60,7 +60,8 @@ collections:
       - { name: title, label: Title, widget: string }
       - { name: description, label: Description (for search engines and link previews), widget: text, required: false }
       - { name: showTitle, label: Show the title as a big heading, widget: boolean, default: false }
-      - name: sections
+      - &sections
+        name: sections
         label: Sections
         label_singular: Section
         widget: list
@@ -93,6 +94,7 @@ collections:
               - { name: id, label: Anchor (for links like /about#mission), widget: string, required: false }
               - { name: body, label: Text, widget: markdown }
               - { name: background, label: Background, widget: select, options: [paper, accent, accent-soft, journal, journal-soft], default: paper }
+              - *buttons
           - name: features
             label: Columns
             widget: object
@@ -151,6 +153,182 @@ collections:
             widget: object
             fields:
               - *buttons
+          # Building blocks for structured pages like the journal's For Authors page
+          - name: contents
+            label: On this page (links to the sections below)
+            widget: object
+            summary: "{{title}}"
+            fields:
+              - { name: title, label: Title, widget: string, default: On this page }
+          - name: chooser
+            label: Chooser (cards that each open a panel)
+            widget: object
+            summary: "{{title}}"
+            fields:
+              - &eyebrow { name: eyebrow, label: Small text above the title (“Step 1”), widget: string, required: false }
+              - &title { name: title, label: Title, widget: string, required: false }
+              - &id { name: id, label: "Anchor (for links like #types)", widget: string, required: false }
+              - &short { name: short, label: Short name in “On this page”, widget: string, required: false }
+              - &intro { name: intro, label: Intro, widget: markdown, required: false }
+              - name: groups
+                label: Groups of cards
+                label_singular: Group
+                widget: list
+                summary: "{{title}}"
+                fields:
+                  - { name: title, label: Title (“What are you submitting?”), widget: string, required: false }
+                  - { name: note, label: Note beside the title, widget: string, required: false }
+                  - name: options
+                    label: Cards
+                    label_singular: Card
+                    widget: list
+                    summary: "{{title}}"
+                    fields:
+                      - { name: title, label: Title, widget: string }
+                      - { name: id, label: "Anchor (link straight to it with #anchor; made from the title if empty)", widget: string, required: false }
+                      - { name: badge, label: Badge (“New”, “Pilot”), widget: string, required: false }
+                      - { name: summary, label: One-line summary, widget: text, required: false }
+                      - name: facts
+                        label: Facts on the card
+                        label_singular: Fact
+                        widget: list
+                        required: false
+                        summary: "{{label}}: {{value}}"
+                        fields:
+                          - { name: label, label: Label (“Review”), widget: string }
+                          - { name: value, label: Value (“standard open review”), widget: string }
+                      - { name: tone, label: Colour when chosen, widget: select, options: [{ label: Black, value: ink }, { label: Journal blue, value: journal }], default: ink }
+                      - { name: heading, label: Panel title (the card’s title if empty), widget: string, required: false }
+                      - { name: note, label: Small text beside the panel title, widget: string, required: false }
+                      - name: blocks
+                        label: Panel content
+                        label_singular: Block
+                        hint: Leave empty for a card that only informs, with nothing to open
+                        widget: list
+                        typeKey: type
+                        types:
+                          - name: text
+                            label: Text
+                            widget: object
+                            fields:
+                              - { name: body, label: Text, widget: markdown }
+                          - name: parts
+                            label: Numbered parts
+                            widget: object
+                            fields:
+                              - name: items
+                                label: Parts
+                                label_singular: Part
+                                widget: list
+                                summary: "{{title}}"
+                                fields:
+                                  - { name: title, label: Title, widget: string }
+                                  - { name: text, label: Text, widget: markdown, required: false }
+                          - name: cards
+                            label: Cards
+                            widget: object
+                            fields:
+                              - { name: columns, label: Most cards side by side, widget: number, value_type: int, min: 1, max: 4, required: false }
+                              - &cards
+                                name: items
+                                label: Cards
+                                label_singular: Card
+                                widget: list
+                                summary: "{{title}}"
+                                fields:
+                                  - { name: title, label: Title, widget: string }
+                                  - { name: body, label: Text, widget: markdown, required: false }
+                                  - { name: status, label: Status, widget: select, required: false, options: [{ label: Required, value: required }, { label: Recommended, value: recommended }, { label: Not needed, value: not-needed }] }
+                                  - { name: badge, label: Badge text (instead of the status’s own), widget: string, required: false }
+                                  - name: look
+                                    label: Look
+                                    widget: select
+                                    default: box
+                                    options:
+                                      - { label: Framed, value: box }
+                                      - { label: Title in a dark bar, value: headed }
+                                      - { label: Tinted, value: soft }
+                                      - { label: Dashed frame, value: dashed }
+                                      - { label: Line on top, value: rule }
+                                      - { label: No frame, value: plain }
+                                  - { name: tags, label: Small boxed words under the text, widget: list, required: false, hint: "Separate with commas. For a link, write [Word](https://…)" }
+                                  - name: more
+                                    label: Extra text that opens on click
+                                    widget: object
+                                    required: false
+                                    fields:
+                                      - { name: label, label: Button label, widget: string }
+                                      - { name: body, label: Text, widget: markdown }
+                          - name: steps
+                            label: Steps
+                            widget: object
+                            fields:
+                              - &steps
+                                name: steps
+                                label: Steps
+                                label_singular: Step
+                                widget: list
+                                summary: "{{title}}"
+                                fields:
+                                  - { name: title, label: Title, widget: string }
+                                  - { name: kicker, label: Small text above (“Stage 1 · You”; numbered if empty), widget: string, required: false }
+                                  - { name: text, label: Text, widget: markdown, required: false }
+                                  - { name: highlight, label: Highlight (a milestone), widget: boolean, default: false }
+                          - name: more
+                            label: Read more (opens on click)
+                            widget: object
+                            summary: "{{label}}"
+                            fields:
+                              - { name: label, label: Button label, widget: string }
+                              - { name: body, label: Text, widget: markdown }
+          - name: cards
+            label: Cards
+            widget: object
+            summary: "{{title}}"
+            fields:
+              - *eyebrow
+              - *title
+              - *id
+              - *short
+              - *intro
+              - { name: legend, label: Explain the Required / Recommended / Not needed badges, widget: boolean, default: false }
+              - { name: columns, label: Most cards side by side, widget: number, value_type: int, min: 1, max: 4, required: false }
+              - *cards
+          - name: steps
+            label: Steps (a numbered process)
+            widget: object
+            summary: "{{title}}"
+            fields:
+              - *eyebrow
+              - *title
+              - *id
+              - *short
+              - *intro
+              - name: routes
+                label: Routes (more than one become tabs)
+                label_singular: Route
+                widget: list
+                summary: "{{label}}"
+                fields:
+                  - { name: label, label: Tab label, widget: string, required: false }
+                  - *steps
+              - { name: note, label: Note under the steps, widget: markdown, required: false }
+
+  - name: journal-pages
+    label: Journal pages
+    label_singular: Journal page
+    description: Pages under /journal, in the journal's colours and under its menu (for-authors is /journal/for-authors). They replace the PubPub page at the same address.
+    folder: pages/journal
+    extension: yaml
+    format: yaml
+    create: true
+    slug: "{{slug}}"
+    identifier_field: title
+    fields:
+      - { name: title, label: Title, widget: string }
+      - { name: description, label: Text under the title (also for search engines and link previews), widget: text, required: false }
+      - { name: showTitle, label: Show the title as a big heading, widget: boolean, default: true }
+      - *sections
 
   - name: blog
     label: Blog

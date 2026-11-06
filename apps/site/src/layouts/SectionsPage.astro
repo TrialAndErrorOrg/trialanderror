@@ -13,20 +13,34 @@ interface Props {
 	searchSection?: string;
 }
 
-/* A page built from sections in site-content: pages/<slug>.yaml, also drawn by /admin's preview */
+/* A page built from sections in site-content: pages/<slug>.yaml, or pages/journal/<slug>.yaml for the journal. Also drawn by /admin's preview */
 const { page, journal, searchSection } = Astro.props;
+// A journal page's tab names the journal too, as its PubPub pages do
+const title = journal && page.title !== journal.config.title ? `${page.title} | ${journal.config.title}` : page.title;
 ---
 
-<Base title={page.title} description={page.description} class={journal?.config.theme}>
+<Base title={title} description={page.description} class={journal?.config.theme}>
 	{journal && <JournalNav journal={journal} />}
 	{
-		page.showTitle && (
-			<div class:list={["border-b-frame border-ink", journal ? "bg-journal text-paper" : "bg-accent"]}>
-				<div class="page py-12 md:py-20">
-					<h1 class="font-heading text-5xl font-black tracking-tighter md:text-8xl">{page.title}</h1>
+		page.showTitle &&
+			(journal ? (
+				// Like the journal's PubPub pages (JournalPage.astro): the journal's name, the title and the description
+				<div class="border-b-frame border-ink bg-journal text-paper">
+					<div class="page flex flex-col gap-4 py-12 md:py-16">
+						<a href={journal.config.path} class="label self-start bg-paper text-ink hover:bg-journal-soft">
+							{journal.config.title}
+						</a>
+						<h1 class="font-heading text-5xl leading-[1.05] font-black tracking-tighter md:text-7xl">{page.title}</h1>
+						{page.description && <p class="max-w-3xl text-lg font-medium md:text-xl">{page.description}</p>}
+					</div>
 				</div>
-			</div>
-		)
+			) : (
+				<div class="border-b-frame border-ink bg-accent">
+					<div class="page py-12 md:py-20">
+						<h1 class="font-heading text-5xl font-black tracking-tighter md:text-8xl">{page.title}</h1>
+					</div>
+				</div>
+			))
 	}
 	{
 		searchSection ? (

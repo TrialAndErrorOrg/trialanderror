@@ -44,13 +44,35 @@ bottom. You can add, remove, reorder and edit sections:
 - **Newsletter sign-up**
 - **Buttons**
 
+For pages that guide someone through steps, like the journal's For Authors
+page, there are also:
+
+- **On this page**: links to the sections below it that have an anchor and a
+  title. "Short name" gives a section a shorter label there.
+- **Chooser**: cards to pick from, each opening its own panel beside them
+  ("What are you submitting?"). A panel holds text, numbered parts, cards,
+  steps and "read more" boxes. Each card has an anchor, so
+  `/journal/for-authors#registered-report` opens that card's panel. A card
+  with no panel content is a plain card that opens nothing.
+- **Cards**: boxes in a grid, optionally marked Required, Recommended or Not
+  needed, with a key above them if you tick it. Each card can be framed,
+  tinted, dashed, titled in a dark bar or have only a line on top, and can
+  have small tags and extra text that opens on click. A tag can be a link:
+  `[Methodology](https://credit.niso.org/contributor-roles/methodology/)`.
+- **Steps**: a numbered process. Several routes (Standard, Perspective,
+  Registered Report) become tabs.
+
+Text sections can have buttons too.
+
 Text fields take Markdown: `**bold**`, `*italic*`, `[a link](https://...)`.
 
 To make a new page, click **New Page** in `/admin`. Its address is its title
 in lowercase with dashes (`Open Positions` becomes `/open-positions`).
 
 The page called `journal` is the journal's front page at `/journal`, with the
-journal's menu above it. All articles are at `/journal/articles`, as cards or
+journal's menu above it. **Journal pages** in `/admin` are the journal's own
+pages: `for-authors` is `/journal/for-authors`, under the journal's menu and in
+its colours. A journal page replaces the PubPub page at the same address. All articles are at `/journal/articles`, as cards or
 a compact list depending on Settings → Site → Journal.
 
 The preview next to the fields is the page as the site draws it, updated a

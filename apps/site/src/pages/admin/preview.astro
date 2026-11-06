@@ -32,14 +32,16 @@ const clean = (value: unknown): unknown => {
 	return value;
 };
 
-const { slug, data } = (await Astro.request.json().catch(() => ({}))) as { slug?: string; data?: unknown };
+const { slug, data, collection } = (await Astro.request.json().catch(() => ({}))) as { slug?: string; data?: unknown; collection?: string };
+// The journal's front page (pages/journal.yaml) and its own pages (pages/journal/) are drawn under the journal's menu
+const inJournal = slug === "journal" || collection === "journal-pages";
 const parsed = pageSchema.safeParse(clean(data ?? {}));
 const problems = parsed.success ? [] : parsed.error.issues.map((issue) => `${issue.path.join(" → ") || "page"}: ${issue.message}`);
 ---
 
 {
 	parsed.success ? (
-		<SectionsPage page={parsed.data} journal={slug === "journal" ? journal() : undefined} />
+		<SectionsPage page={parsed.data} journal={inJournal ? journal() : undefined} />
 	) : (
 		<html lang="en">
 			<body style="font-family: sans-serif; padding: 2rem">

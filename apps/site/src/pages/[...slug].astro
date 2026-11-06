@@ -13,7 +13,8 @@ type Props = { local: CollectionEntry<"pages"> } | { cms: CmsPage };
 export const getStaticPaths = (async () => {
 	// The homepage and the journal's front page have pages of their own (index.astro, journal/index.astro)
 	const OWN_PAGES = ["index", "journal"];
-	const local = (await getCollection("pages")).filter((p) => !OWN_PAGES.includes(p.id));
+	// pages/journal/* are the journal's (journal/[slug].astro)
+	const local = (await getCollection("pages")).filter((p) => !OWN_PAGES.includes(p.id) && !p.id.startsWith("journal/"));
 	const localSlugs = new Set([...local.map((p) => p.id), ...OWN_PAGES]);
 	const cms = (await getCmsPages()).filter((p) => !localSlugs.has(p.slug));
 	return [

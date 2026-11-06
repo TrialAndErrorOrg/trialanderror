@@ -17,6 +17,7 @@ can also search OJS with their own OJS API key.
 | What | Where it lives | How to change it |
 | --- | --- | --- |
 | Homepage, About and other section-built pages | site-content: `pages/*.yaml` | `/admin`, or edit the file |
+| The journal's own section-built pages (For Authors) | site-content: `pages/journal/*.yaml` | `/admin` → Journal pages |
 | Menus, footer, social links | site-content: `settings/navigation.yaml` | `/admin` → Settings → Menus |
 | Site name, newsletter, analytics | site-content: `settings/site.yaml` | `/admin` → Settings → Site |
 | Images and files uploaded in `/admin` | site-content: `uploads/` | `/admin` |
@@ -63,7 +64,7 @@ Dockerfile           packages the built site, see docs/deploying.md
 ```
 
 site-content holds `pages/` (section-built pages, `index.yaml` is the
-homepage), `blog/` (posts, Markdown), `people/`, `categories/`, `settings/`
+homepage, `journal/` the journal's own pages), `blog/` (posts, Markdown), `people/`, `categories/`, `settings/`
 (`site.yaml`, `navigation.yaml`) and `uploads/`.
 
 ## What's where
