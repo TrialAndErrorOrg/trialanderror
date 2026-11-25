@@ -73,3 +73,9 @@ export async function getCategories() {
 	const descriptions = new Map(info.map((c) => [c.slug, c.description]));
 	return terms.map((term) => ({ ...term, description: descriptions.get(term.slug) }));
 }
+
+/** The journal's editorial board, from site-content's people (people with a `journal` role) */
+export async function getEditorialBoard(): Promise<Person[]> {
+	const s = await source();
+	return "getEditorialBoard" in s ? s.getEditorialBoard() : [];
+}

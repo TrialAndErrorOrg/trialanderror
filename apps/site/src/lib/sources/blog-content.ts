@@ -43,6 +43,7 @@ async function toPerson({ id, data }: CollectionEntry<"people">): Promise<Person
 		orcid: data.orcid,
 		links: data.links,
 		aliases: data.aliases,
+		journal: data.journal,
 	};
 }
 
@@ -90,6 +91,13 @@ export async function getPosts(): Promise<Post[]> {
 /** Blog categories with their descriptions, in /admin's order (by file name) */
 export async function getCategories() {
 	return (await getCollection("categories")).map((c) => ({ slug: c.id, title: c.data.title, description: c.data.description }));
+}
+
+/** Everyone with a role on the journal's editorial board, by last name */
+export async function getEditorialBoard(): Promise<Person[]> {
+	const entries = await getCollection("people", (e) => !!e.data.journal);
+	const byId = await getPeople();
+	return entries.sort((a, b) => a.data.lastName.localeCompare(b.data.lastName)).map((e) => byId.get(e.id)!);
 }
 
 /** Team members, by last name */

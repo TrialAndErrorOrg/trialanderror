@@ -17,6 +17,9 @@ const background = z.enum(["paper", "accent", "accent-soft", "journal", "journal
 /** How a list of journal articles looks: cards with the abstract, or a compact list like a table of contents */
 export const articleStyle = z.enum(["cards", "list"]);
 
+/** Roles on the journal's editorial board, in the order the board lists them */
+export const journalRoles = ["editor-in-chief", "managing-editor", "section-editor", "editor", "advisory-board"] as const;
+
 /*
  * Building blocks for structured pages, like the journal's For Authors page.
  * Cards and steps are sections of their own, and also go inside the panel
@@ -157,6 +160,12 @@ const section = z.discriminatedUnion("type", [
 		count: z.number().int().positive().default(3),
 	}),
 	z.object({
+		type: z.literal("editorial-board"),
+		id: z.string().optional(),
+		title: z.string().optional(),
+		intro: z.string().optional(),
+	}),
+	z.object({
 		type: z.literal("team"),
 		id: z.string().optional(),
 		title: z.string().default("Meet the Team"),
@@ -265,6 +274,14 @@ const people = defineCollection({
 		links: z.array(z.object({ icon: z.string(), url: z.string() })).default([]),
 		/** Old slugs, which keep redirecting to this person */
 		aliases: z.array(z.string()).default([]),
+		/** Their place on the journal's editorial board, which lists everyone who has one */
+		journal: z
+			.object({
+				role: z.enum(journalRoles),
+				/** The section they edit, like Psychology or Life Sciences */
+				section: z.string().optional(),
+			})
+			.optional(),
 	}),
 });
 

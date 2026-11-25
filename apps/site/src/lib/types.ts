@@ -29,6 +29,8 @@ export interface Person {
 	links: { icon: string; url: string }[];
 	/** Old slugs, which redirect to this person's page */
 	aliases?: string[];
+	/** Their place on the journal's editorial board */
+	journal?: { role: "editor-in-chief" | "managing-editor" | "section-editor" | "editor" | "advisory-board"; section?: string };
 }
 
 export interface Term {

@@ -1,0 +1,95 @@
+---
+import type { Section } from "~/content.config";
+import { personHref } from "~/lib/people";
+import { getEditorialBoard } from "~/lib/sources/blog";
+import type { Person } from "~/lib/types";
+import Markdown from "../Markdown.astro";
+import Picture from "../Picture.astro";
+import SocialIcon from "../SocialIcon.astro";
+
+/*
+ * The journal's editorial board, made from site-content's people: everyone
+ * with a journal role, grouped by role. Changing someone's role in /admin
+ * (People) changes the board.
+ */
+
+type Props = Extract<Section, { type: "editorial-board" }>;
+const { id, title, intro } = Astro.props;
+
+const ROLES: Record<NonNullable<Person["journal"]>["role"], [one: string, many: string]> = {
+	"editor-in-chief": ["Editor-in-Chief", "Editors-in-Chief"],
+	"managing-editor": ["Managing Editor", "Managing Editors"],
+	"section-editor": ["Section Editor", "Section Editors"],
+	editor: ["Editor", "Editors"],
+	"advisory-board": ["Advisory Board", "Advisory Board"],
+};
+
+const board = await getEditorialBoard();
+const groups = Object.entries(ROLES)
+	.map(([role, [one, many]]) => {
+		const people = board.filter((p) => p.journal?.role === role).sort((a, b) => (a.journal?.section ?? "").localeCompare(b.journal?.section ?? ""));
+		return { role, title: people.length === 1 ? one : many, people };
+	})
+	.filter((g) => g.people.length > 0);
+const hrefs = new Map(await Promise.all(board.map(async (p) => [p, await personHref(p, true)] as const)));
+---
+
+<section id={id} class="page scroll-mt-24 py-12">
+	{title && <h2 class="section-title mb-6 text-journal after:bg-journal">{title}</h2>}
+	{intro && <Markdown text={intro} class="prose-site mb-12" />}
+	<div class="flex flex-col gap-14">
+		{
+			groups.map((group) => (
+				<div class="flex flex-col gap-6">
+					<h3 class="border-b-heavy border-journal pb-2 font-heading text-sm font-black tracking-widest text-journal uppercase">{group.title}</h3>
+					<ul class:list={["grid gap-8", group.role === "editor-in-chief" ? "lg:grid-cols-1" : "md:grid-cols-2 xl:grid-cols-3"]}>
+						{group.people.map((person) => (
+							<li class:list={["card group", group.role === "editor-in-chief" && "md:flex-row"]}>
+								<div class:list={["relative overflow-hidden border-ink bg-journal-soft", group.role === "editor-in-chief" ? "aspect-square border-b-frame md:w-72 md:shrink-0 md:border-r-frame md:border-b-0" : "aspect-[4/3] border-b-frame"]}>
+									<Picture image={person.image} width={600} class="size-full object-cover" alt={person.name} />
+									{person.journal?.section && <span class="label label-journal absolute bottom-4 left-0 border-l-0">{person.journal.section}</span>}
+								</div>
+								<div class="flex flex-grow flex-col gap-3 p-6">
+									<h4 class="font-heading text-2xl leading-tight font-black tracking-tight">
+										{hrefs.get(person) ? (
+											<a href={hrefs.get(person)} class="card-link">
+												{person.name}
+											</a>
+										) : (
+											person.name
+										)}
+										{person.pronouns && <span class="ml-2 align-middle font-sans text-sm font-normal text-muted">{person.pronouns}</span>}
+									</h4>
+									{person.summary && <div class:list={["prose prose-sm max-w-none text-ink", group.role !== "editor-in-chief" && "line-clamp-6"]} set:html={person.summary} />}
+									<ul class="relative z-10 mt-auto flex flex-wrap gap-3 pt-2">
+										{person.orcid && (
+											<li>
+												<a href={person.orcid} aria-label={`ORCID of ${person.name}`} class="text-orcid">
+													<SocialIcon icon="orcid" />
+												</a>
+											</li>
+										)}
+										{person.email && (
+											<li>
+												<a href={`mailto:${person.email}`} aria-label={`Email ${person.name}`} class="hover:text-journal">
+													<SocialIcon icon="email" />
+												</a>
+											</li>
+										)}
+										{person.links.map((l) => (
+											<li>
+												<a href={l.url} aria-label={l.icon} class="hover:text-journal">
+													<SocialIcon icon={l.icon} />
+												</a>
+											</li>
+										))}
+									</ul>
+								</div>
+							</li>
+						))}
+					</ul>
+				</div>
+			))
+		}
+	</div>
+</section>
