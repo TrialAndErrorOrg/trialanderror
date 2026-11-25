@@ -58,7 +58,12 @@ const extraMeta = Object.entries(meta).flatMap(([name, value]) =>
 		<Font cssVariable="--font-overpass" preload />
 		<Font cssVariable="--font-open-sans" preload />
 
-		{site.analytics && <script is:inline defer src={site.analytics.script} data-website-id={site.analytics.websiteId} />}
+		{
+			// GoatCounter: counts page views without cookies or anything that identifies the reader
+			site.analytics && (
+				<script is:inline async data-goatcounter={new URL("/count", site.analytics.goatcounter).href} src={new URL("/count.js", site.analytics.goatcounter).href} />
+			)
+		}
 		<slot name="head" />
 	</head>
 	<body class="flex min-h-screen flex-col">

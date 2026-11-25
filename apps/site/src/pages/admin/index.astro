@@ -1,63 +1,364 @@
 ---
-import { Font } from "astro:assets";
-import { ADMIN_AUTH, UNSPLASH_ACCESS_KEY } from "astro:env/server";
+import { getCollection } from "astro:content";
+import { Icon } from "astro-icon/components";
+import Base from "~/layouts/Base.astro";
+import { siteSignIn } from "~/lib/admin";
+import { site } from "~/lib/settings";
+import { analyticsConfigured } from "~/lib/sources/analytics";
+import { getEventsByTime } from "~/lib/sources/events";
 
-// The editing interface. Sveltia CMS edits the files in the repository
-// directly, so it needs no database. Fields: src/admin/config.yml
+/*
+ * /admin's front door: a way into each part of the editor (/admin/content),
+ * the converter, the services around the site, and the site's numbers from
+ * GoatCounter for signed-in editors (fetched from /admin/overview.json).
+ */
 
-// Rendered on request, so ADMIN_AUTH is read where the site runs
+// Rendered on request, so ADMIN_AUTH and the counts are read where the site runs
 export const prerender = false;
 
-// Sveltia names the button after its backend ("Sign In with GitHub") and has
-// no setting for it, so with Microsoft sign-in the text is swapped
-const relabel = ADMIN_AUTH !== "github";
+const cms = (hash: string) => `/admin/content#/collections/${hash}`;
+const content = [
+	{ title: "Pages", text: "The homepage, About, Donate and other pages", href: cms("pages"), icon: "lucide:layout-template" },
+	{ title: "Journal pages", text: "For Authors, Editorial Team and the journal's other pages", href: cms("journal-pages"), icon: "lucide:book-open" },
+	{ title: "Blog", text: "Posts, drafts and reviews", href: cms("blog"), icon: "lucide:newspaper", add: { label: "New post", href: cms("blog/new") } },
+	{ title: "Events", text: "Symposia, talks and workshops", href: cms("events"), icon: "lucide:calendar", add: { label: "New event", href: cms("events/new") } },
+	{ title: "People", text: "The team, authors and the journal's editorial team", href: cms("people"), icon: "lucide:users" },
+	{ title: "Supporters", text: "Funders, partners and donors we thank", href: cms("supporters"), icon: "lucide:heart-handshake" },
+	{ title: "Settings", text: "Menus, newsletter, announcement bar, blog settings", href: cms("settings"), icon: "lucide:settings" },
+];
+
+const [posts, pages, people, supporters, events] = await Promise.all([
+	getCollection("blog"),
+	getCollection("pages"),
+	getCollection("people"),
+	getCollection("supporters"),
+	getEventsByTime(),
+]);
+const counts = [
+	{ value: posts.length, label: "blog posts" },
+	{ value: events.upcoming.length, label: "events coming up" },
+	{ value: pages.filter((p) => !p.id.startsWith("journal/")).length, label: "pages" },
+	{ value: pages.filter((p) => p.id.startsWith("journal/")).length, label: "journal pages" },
+	{ value: people.filter((p) => p.data.team).length, label: "team members" },
+	{ value: supporters.length, label: "supporters" },
+];
+
+const elsewhere = [
+	{ title: "Submissions (OJS)", href: "https://submit.trialanderror.org/jote", text: "Where journal articles are submitted and reviewed" },
+	{ title: "Newsletter (Substack)", href: `${site.blog.substack ?? "https://centeroftrialanderror.substack.com"}/publish`, text: "Write and send the newsletter" },
+	{ title: "Journal data (Underlay)", href: "https://www.underlay.org/centeroftrialanderror/jote", text: "The journal's articles as this site reads them" },
+	{ title: "Site builds (GitHub)", href: "https://github.com/TrialAndErrorOrg/trialanderror/actions/workflows/site.yml", text: "Whether the latest change made it onto the site" },
+	{ title: "How to edit the site", href: "https://github.com/TrialAndErrorOrg/trialanderror/blob/main/apps/site/docs/editing.md", text: "The editing guide" },
+];
+const card = "card group p-5";
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<meta name="robots" content="noindex" />
-		<title>Edit the site | Center of Trial and Error</title>
-		<link href="/admin/config.yml" type="application/yaml" rel="cms-config-url" />
-	</head>
-	<body>
-		{
-			relabel && (
-				<script is:inline>
-					new MutationObserver(() => {
-						const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-						while (walker.nextNode()) {
-							const node = walker.currentNode;
-							// Sveltia wraps the name in Unicode isolation marks: "Sign In with \u2068GitHub\u2069"
-							if (/^Sign In with \u2068?GitHub\u2069?$/.test(node.nodeValue.trim())) node.nodeValue = "Sign in with Microsoft";
-						}
-					}).observe(document.body, { childList: true, subtree: true, characterData: true });
-				</script>
-			)
+<Base title="Site admin" description="Edit the Center of Trial and Error's site." noindex>
+	<section class="border-b-frame border-ink bg-subtle">
+		<div class="page flex flex-col gap-4 py-10 md:flex-row md:items-end md:justify-between md:py-14">
+			<div class="flex flex-col gap-3">
+				<p class="font-heading text-sm font-bold tracking-widest text-muted uppercase">{site.name}</p>
+				<h1 class="font-heading text-5xl leading-none font-black tracking-tighter md:text-7xl">Site admin</h1>
+				<p class="max-w-2xl text-lg">Edit pages, posts and events, convert manuscripts, and see what people read.</p>
+			</div>
+			<div id="who" class="flex flex-col items-start gap-2 md:items-end" data-sign-in={siteSignIn ? "" : undefined}>
+				<a href="/admin/content" class="button">
+					Edit the site <Icon name="lucide:arrow-right" class="size-5" aria-hidden="true" />
+				</a>
+				<p data-who class="text-sm text-muted"></p>
+			</div>
+		</div>
+	</section>
+
+	<section class="page py-12" aria-labelledby="edit-title">
+		<h2 id="edit-title" class="section-title mb-8">Edit</h2>
+		<ul class="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+			{
+				content.map((item) => (
+					<li class={card}>
+						<div class="flex items-start gap-3">
+							<Icon name={item.icon} class="mt-0.5 size-6 shrink-0" aria-hidden="true" />
+							<div class="flex flex-col gap-1">
+								<a href={item.href} class="card-link font-heading text-xl font-black tracking-tight">
+									{item.title}
+								</a>
+								<p class="text-sm text-muted">{item.text}</p>
+								{item.add && (
+									<a href={item.add.href} class="relative z-10 mt-2 self-start font-heading text-sm font-bold underline decoration-accent decoration-2 underline-offset-4">
+										+ {item.add.label}
+									</a>
+								)}
+							</div>
+						</div>
+					</li>
+				))
+			}
+			<li class:list={[card, "bg-journal-soft"]}>
+				<div class="flex items-start gap-3">
+					<Icon name="lucide:file-cog" class="mt-0.5 size-6 shrink-0" aria-hidden="true" />
+					<div class="flex flex-col gap-1">
+						<a href="/admin/convert" class="card-link font-heading text-xl font-black tracking-tight">Convert a manuscript</a>
+						<p class="text-sm text-muted">A .docx, or a submission from OJS, to LaTeX and Typst</p>
+					</div>
+				</div>
+			</li>
+		</ul>
+	</section>
+
+	<section class="border-y-frame border-ink bg-subtle py-12" aria-labelledby="numbers-title">
+		<div class="page flex flex-col gap-8">
+			<div class="flex flex-wrap items-end justify-between gap-4">
+				<h2 id="numbers-title" class="section-title flex-grow">Readers</h2>
+				<div class="flex border-frame border-ink bg-paper" role="group" aria-label="Period" data-periods hidden>
+					{
+						[7, 30, 365].map((days) => (
+							<button type="button" data-days={days} class="border-r-frame border-ink px-4 py-2 font-heading font-bold last:border-r-0 aria-pressed:bg-ink aria-pressed:text-paper" aria-pressed={days === 30 ? "true" : "false"}>
+								{days === 365 ? "Year" : `${days} days`}
+							</button>
+						))
+					}
+				</div>
+			</div>
+			<div data-numbers class="flex flex-col gap-8" aria-live="polite">
+				{
+					!siteSignIn ? (
+						<p class="max-w-2xl">The numbers show for editors who sign in with Microsoft (ADMIN_AUTH=microsoft).</p>
+					) : !analyticsConfigured() ? (
+						<p class="max-w-2xl">
+							No numbers yet: the site counts readers with GoatCounter once it has its address (Settings → Site → Analytics) and an API token
+							(GOATCOUNTER_TOKEN).
+						</p>
+					) : (
+						<p data-signed-out class="flex flex-wrap items-center gap-4">
+							Sign in to see what people read.
+							<button type="button" data-sign-in-button class="button button-plain">
+								Sign in with Microsoft
+							</button>
+						</p>
+					)
+				}
+			</div>
+		</div>
+	</section>
+
+	<section class="page grid gap-12 py-12 lg:grid-cols-[2fr_3fr]">
+		<div>
+			<h2 class="section-title mb-6">On the site</h2>
+			<dl class="grid grid-cols-2 gap-px border-frame border-ink bg-ink sm:grid-cols-3">
+				{
+					counts.map((c) => (
+						<div class="flex flex-col-reverse gap-1 bg-paper p-4">
+							<dt class="text-sm text-muted">{c.label}</dt>
+							<dd class="font-heading text-3xl leading-none font-black">{c.value}</dd>
+						</div>
+					))
+				}
+			</dl>
+		</div>
+		<div>
+			<h2 class="section-title mb-6">Elsewhere</h2>
+			<ul class="flex flex-col border-frame border-ink">
+				{
+					elsewhere.map((e) => (
+						<li class="border-b border-ink/20 last:border-b-0">
+							<a href={e.href} class="flex items-center justify-between gap-4 p-4 hover:bg-subtle">
+								<span class="flex flex-col">
+									<span class="font-heading font-bold">{e.title}</span>
+									<span class="text-sm text-muted">{e.text}</span>
+								</span>
+								<Icon name="lucide:arrow-up-right" class="size-5 shrink-0" aria-hidden="true" />
+							</a>
+						</li>
+					))
+				}
+			</ul>
+		</div>
+	</section>
+</Base>
+
+<script>
+	import { forgetSession, signIn, storedSession } from "~/admin/session";
+
+	/*
+	 * Fills in who is signed in and the numbers, from /admin/overview.json.
+	 * The bar chart is one series (visitors), so it has no legend: the heading
+	 * names it. Every bar has a tooltip, and the same numbers are in a table.
+	 */
+
+	interface Overview {
+		start: string;
+		end: string;
+		total: number;
+		days: { day: string; count: number }[];
+		pages: { path: string; title: string; count: number }[];
+		referrers: { name: string; count: number }[];
+		dashboard: string;
+	}
+	type Answer = { editor: { name: string; email?: string }; analytics: { configured: false } | ({ configured: true; error?: string } & Partial<Overview>) };
+
+	const numbers = document.querySelector<HTMLElement>("[data-numbers]")!;
+	const who = document.querySelector<HTMLElement>("[data-who]")!;
+	const periods = document.querySelector<HTMLElement>("[data-periods]")!;
+	const canSignIn = document.querySelector("[data-sign-in]") !== null;
+	let session = storedSession();
+	let days = 30;
+
+	const fmt = new Intl.NumberFormat("en-GB");
+	const dayFmt = new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
+	const shortFmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+	const esc = (text: string) => text.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
+
+	/** A year of days is too many bars: count by week instead */
+	function buckets(rows: { day: string; count: number }[]) {
+		if (rows.length <= 90) return rows.map((r) => ({ label: dayFmt.format(new Date(r.day)), start: r.day, count: r.count }));
+		const weeks: { label: string; start: string; count: number }[] = [];
+		rows.forEach((r, i) => {
+			if (i % 7 === 0) weeks.push({ label: `Week of ${shortFmt.format(new Date(r.day))}`, start: r.day, count: 0 });
+			weeks[weeks.length - 1].count += r.count;
+		});
+		return weeks;
+	}
+
+	function chart(rows: { label: string; start: string; count: number }[]) {
+		const width = 800;
+		const height = 180;
+		const max = Math.max(1, ...rows.map((r) => r.count));
+		const slot = width / rows.length;
+		const gap = Math.min(2, slot / 3);
+		const bar = slot - gap;
+		const bars = rows
+			.map((r, i) => {
+				const h = Math.max(r.count > 0 ? 2 : 0, (r.count / max) * (height - 8));
+				const x = i * slot + gap / 2;
+				const y = height - h;
+				const radius = Math.min(4, bar / 2, h);
+				// Rounded at the top, square on the baseline
+				const path = h === 0 ? "" : `M${x},${height} V${y + radius} Q${x},${y} ${x + radius},${y} H${x + bar - radius} Q${x + bar},${y} ${x + bar},${y + radius} V${height} Z`;
+				return `<g data-tip="${esc(r.label)}: ${fmt.format(r.count)} visitors"><rect x="${i * slot}" y="0" width="${slot}" height="${height}" fill="transparent"/><path d="${path}" fill="var(--color-journal)"/></g>`;
+			})
+			.join("");
+		return `
+			<figure class="relative flex flex-col gap-2">
+				<div class="flex justify-between text-xs text-muted"><span>${fmt.format(max)}</span></div>
+				<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" class="h-44 w-full overflow-visible" role="img" aria-label="Visitors per ${rows.length > 90 ? "week" : "day"}">
+					<line x1="0" y1="${height}" x2="${width}" y2="${height}" stroke="var(--color-ink)" stroke-width="1" vector-effect="non-scaling-stroke"/>
+					${bars}
+				</svg>
+				<div class="flex justify-between text-xs text-muted"><span>${esc(rows[0]?.label ?? "")}</span><span>${esc(rows.at(-1)?.label ?? "")}</span></div>
+				<div data-tooltip hidden class="pointer-events-none absolute z-10 border-frame border-ink bg-paper px-3 py-1.5 text-sm font-bold whitespace-nowrap shadow-hard"></div>
+				<details class="text-sm">
+					<summary class="cursor-pointer font-heading font-bold">Show as a table</summary>
+					<table class="mt-3 w-full max-w-md text-left"><tbody>
+						${rows.map((r) => `<tr class="border-b border-ink/10"><td class="py-1 pr-4">${esc(r.label)}</td><td class="py-1 text-right tabular-nums">${fmt.format(r.count)}</td></tr>`).join("")}
+					</tbody></table>
+				</details>
+			</figure>`;
+	}
+
+	function list(title: string, rows: { name: string; href?: string; count: number }[]) {
+		if (rows.length === 0) return `<div><h3 class="mb-3 font-heading text-sm font-black tracking-widest uppercase">${title}</h3><p class="text-sm text-muted">Nothing yet.</p></div>`;
+		const max = Math.max(...rows.map((r) => r.count));
+		return `
+			<div>
+				<h3 class="mb-3 font-heading text-sm font-black tracking-widest uppercase">${title}</h3>
+				<table class="w-full border-frame border-ink bg-paper text-left text-sm">
+					<thead class="sr-only"><tr><th>Name</th><th>Visitors</th></tr></thead>
+					<tbody>
+						${rows
+							.map(
+								(r) => `
+							<tr class="border-b border-ink/10 last:border-b-0">
+								<td class="relative w-full px-3 py-2">
+									<span class="absolute inset-y-1 left-0 bg-journal-soft" style="width:${(r.count / max) * 100}%" aria-hidden="true"></span>
+									<span class="relative line-clamp-1 break-all">${r.href ? `<a href="${esc(r.href)}" class="underline-offset-4 hover:underline">${esc(r.name)}</a>` : esc(r.name)}</span>
+								</td>
+								<td class="px-3 py-2 text-right font-bold tabular-nums">${fmt.format(r.count)}</td>
+							</tr>`,
+							)
+							.join("")}
+					</tbody>
+				</table>
+			</div>`;
+	}
+
+	function render(answer: Answer) {
+		who.textContent = `Signed in as ${answer.editor.name}`;
+		const a = answer.analytics;
+		if (!a.configured) {
+			numbers.innerHTML = `<p class="max-w-2xl">No numbers yet: the site counts readers with GoatCounter once it has its address (Settings → Site → Analytics) and an API token (GOATCOUNTER_TOKEN).</p>`;
+			return;
 		}
-		{
-			// Sveltia asks each editor for an Unsplash key and keeps it in their browser's preferences.
-			// Putting it there first means nobody has to. Signing out clears it, the next visit puts it back
-			UNSPLASH_ACCESS_KEY && (
-				<script is:inline define:vars={{ key: UNSPLASH_ACCESS_KEY }}>
-					try {
-						const prefs = JSON.parse(localStorage.getItem("sveltia-cms.prefs") ?? "{}") ?? {};
-						prefs.apiKeys = { ...prefs.apiKeys, unsplash: key };
-						localStorage.setItem("sveltia-cms.prefs", JSON.stringify(prefs));
-					} catch {}
-				</script>
-			)
+		if (a.error || !a.days) {
+			numbers.innerHTML = `<p>${esc(a.error ?? "No numbers")}</p>`;
+			return;
 		}
-		<script is:inline src="https://unpkg.com/@sveltia/cms@0.227.0/dist/sveltia-cms.js"></script>
-		{/* The site's fonts, for the live preview (src/admin/preview.ts). Only the preview pane loads them */}
-		<template id="preview-setup">
-			<Font cssVariable="--font-overpass" />
-			<Font cssVariable="--font-open-sans" />
-		</template>
-		<script>
-			import "~/admin/preview";
-		</script>
-	</body>
-</html>
+		periods.hidden = false;
+		numbers.innerHTML = `
+			<div class="grid gap-8 lg:grid-cols-[auto_1fr] lg:items-end">
+				<div class="flex flex-col gap-1">
+					<p class="font-heading text-6xl leading-none font-black tracking-tighter">${fmt.format(a.total ?? 0)}</p>
+					<p class="text-muted">visitors, ${esc(shortFmt.format(new Date(a.start!)))} to ${esc(shortFmt.format(new Date(a.end!)))}</p>
+				</div>
+				${chart(buckets(a.days))}
+			</div>
+			<div class="grid gap-8 lg:grid-cols-2">
+				${list("Most read", (a.pages ?? []).map((p) => ({ name: p.title || p.path, href: p.path, count: p.count })))}
+				${list("Where readers came from", a.referrers ?? [])}
+			</div>
+			<p class="text-sm text-muted">Counted without cookies. More detail in <a href="${esc(a.dashboard!)}" class="underline underline-offset-4">GoatCounter</a>, for those with a login.</p>`;
+
+		const tooltip = numbers.querySelector<HTMLElement>("[data-tooltip]")!;
+		const figure = tooltip.parentElement!;
+		numbers.querySelectorAll<SVGGElement>("[data-tip]").forEach((g) => {
+			g.addEventListener("pointerenter", () => {
+				tooltip.textContent = g.dataset.tip!;
+				tooltip.hidden = false;
+				g.querySelector("path")?.setAttribute("fill", "var(--color-accent)");
+			});
+			g.addEventListener("pointermove", (event) => {
+				const box = figure.getBoundingClientRect();
+				const x = Math.min(event.clientX - box.left + 12, box.width - tooltip.offsetWidth);
+				tooltip.style.left = `${Math.max(0, x)}px`;
+				tooltip.style.top = `${event.clientY - box.top - 40}px`;
+			});
+			g.addEventListener("pointerleave", () => {
+				tooltip.hidden = true;
+				g.querySelector("path")?.setAttribute("fill", "var(--color-journal)");
+			});
+		});
+	}
+
+	async function load() {
+		if (!session) return;
+		numbers.setAttribute("aria-busy", "true");
+		const response = await fetch(`/admin/overview.json?days=${days}`, { headers: { Authorization: `Bearer ${session}` } });
+		numbers.removeAttribute("aria-busy");
+		if (response.status === 401) {
+			forgetSession();
+			session = undefined;
+			who.textContent = "Your sign-in expired.";
+			return;
+		}
+		if (!response.ok) return;
+		render((await response.json()) as Answer);
+	}
+
+	document.querySelector("[data-sign-in-button]")?.addEventListener("click", async () => {
+		try {
+			session = await signIn();
+			await load();
+		} catch (error) {
+			who.textContent = error instanceof Error ? error.message : "Sign-in failed";
+		}
+	});
+
+	periods.querySelectorAll<HTMLButtonElement>("[data-days]").forEach((button) =>
+		button.addEventListener("click", () => {
+			days = Number(button.dataset.days);
+			periods.querySelectorAll("[data-days]").forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
+			void load();
+		}),
+	);
+
+	if (canSignIn) void load();
+</script>

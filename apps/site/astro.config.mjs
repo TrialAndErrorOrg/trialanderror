@@ -75,9 +75,7 @@ export default defineConfig({
 			// The journal's OJS API, for the converter at /admin/convert
 			OJS_API_URL: envField.string({ context: "server", access: "secret", default: "https://submit.trialanderror.org/index.php/jote/api/v1" }),
 			// Umami, for "Most read" on the blog. Optional: without it the hand-picked list in Settings is used
-			UMAMI_URL: envField.string({ context: "server", access: "secret", default: "https://analytics.trialanderror.org" }),
-			UMAMI_USERNAME: envField.string({ context: "server", access: "secret", optional: true }),
-			UMAMI_PASSWORD: envField.string({ context: "server", access: "secret", optional: true }),
+			GOATCOUNTER_TOKEN: envField.string({ context: "server", access: "secret", optional: true }),
 		},
 	},
 });

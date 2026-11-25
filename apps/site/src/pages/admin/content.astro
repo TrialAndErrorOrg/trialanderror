@@ -1,0 +1,63 @@
+---
+import { Font } from "astro:assets";
+import { ADMIN_AUTH, UNSPLASH_ACCESS_KEY } from "astro:env/server";
+
+// The editing interface. Sveltia CMS edits the files in the repository
+// directly, so it needs no database. Fields: src/admin/config.yml
+
+// Rendered on request, so ADMIN_AUTH is read where the site runs
+export const prerender = false;
+
+// Sveltia names the button after its backend ("Sign In with GitHub") and has
+// no setting for it, so with Microsoft sign-in the text is swapped
+const relabel = ADMIN_AUTH !== "github";
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="robots" content="noindex" />
+		<title>Edit the site | Center of Trial and Error</title>
+		<link href="/admin/config.yml" type="application/yaml" rel="cms-config-url" />
+	</head>
+	<body>
+		{
+			relabel && (
+				<script is:inline>
+					new MutationObserver(() => {
+						const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+						while (walker.nextNode()) {
+							const node = walker.currentNode;
+							// Sveltia wraps the name in Unicode isolation marks: "Sign In with \u2068GitHub\u2069"
+							if (/^Sign In with \u2068?GitHub\u2069?$/.test(node.nodeValue.trim())) node.nodeValue = "Sign in with Microsoft";
+						}
+					}).observe(document.body, { childList: true, subtree: true, characterData: true });
+				</script>
+			)
+		}
+		{
+			// Sveltia asks each editor for an Unsplash key and keeps it in their browser's preferences.
+			// Putting it there first means nobody has to. Signing out clears it, the next visit puts it back
+			UNSPLASH_ACCESS_KEY && (
+				<script is:inline define:vars={{ key: UNSPLASH_ACCESS_KEY }}>
+					try {
+						const prefs = JSON.parse(localStorage.getItem("sveltia-cms.prefs") ?? "{}") ?? {};
+						prefs.apiKeys = { ...prefs.apiKeys, unsplash: key };
+						localStorage.setItem("sveltia-cms.prefs", JSON.stringify(prefs));
+					} catch {}
+				</script>
+			)
+		}
+		<script is:inline src="https://unpkg.com/@sveltia/cms@0.227.0/dist/sveltia-cms.js"></script>
+		{/* The site's fonts, for the live preview (src/admin/preview.ts). Only the preview pane loads them */}
+		<template id="preview-setup">
+			<Font cssVariable="--font-overpass" />
+			<Font cssVariable="--font-open-sans" />
+		</template>
+		<script>
+			import "~/admin/preview";
+		</script>
+	</body>
+</html>

@@ -615,8 +615,7 @@ collections:
             widget: object
             required: false
             fields:
-              - { name: script, label: Script address, widget: string }
-              - { name: websiteId, label: Website ID, widget: string }
+              - { name: goatcounter, label: GoatCounter address, widget: string, hint: "Like https://stats.trialanderror.org. The site counts page views there, without cookies" }
           - name: adTracking
             label: Google Ads conversion tracking
             widget: object

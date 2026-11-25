@@ -23,9 +23,9 @@ Substack, paste its address in **The post on Substack**: the post then ends
 with the number of comments it has there and a link to join the discussion.
 Substack's terms don't allow copying the comments themselves onto the site.
 
-The blog's front page lists the most read posts. They come from Umami when the
-build has `UMAMI_USERNAME` and `UMAMI_PASSWORD`, and otherwise from **Settings →
-Site → Blog → Most read**. Every post is in the archive at `/blog/page/1`.
+The blog's front page lists the most read posts. They come from GoatCounter
+when the build has `GOATCOUNTER_TOKEN`, and otherwise from **Settings → Site →
+Blog → Most read**. Every post is in the archive at `/blog/page/1`.
 
 ### Images
 
@@ -100,6 +100,19 @@ moment after you stop typing. Links in it work, but lead away from the preview.
 
 Saving in `/admin` makes a commit to site-content, which triggers a rebuild.
 
+## /admin
+
+`/admin` is the front door: a link into each part of the editor, the
+converter, the services around the site (OJS, Substack, Underlay, the builds)
+and what people read, from GoatCounter. The editor itself is at
+`/admin/content`. Every page of the site links to `/admin` at the bottom
+(**Editor sign-in**).
+
+The numbers show for editors signed in with Microsoft: the site asks
+GoatCounter with its own token, so nobody needs a GoatCounter login. They need
+the GoatCounter address in **Settings → Site → Analytics** and
+`GOATCOUNTER_TOKEN` where the site runs ([deploying.md](deploying.md#goatcounter)).
+
 ## Signing in to /admin
 
 With `ADMIN_AUTH=microsoft`, editors sign in with their Center Microsoft
@@ -143,3 +156,17 @@ built, and the page hides events that have ended since.
 **Settings → Site → Announcement** puts a line across the top of every page,
 with a link if you give one, until the date under **Hide after**. Empty the
 text to remove it.
+
+## Supporters
+
+**Supporters** in `/admin` lists who supports the Center: funders, partners
+and donors, with a logo for organisations. A **Supporters** section shows them
+on a page (the Donate page has one), grouped by kind, or only the kinds you
+pick.
+
+## Highlighting a journal issue
+
+The **Featured journal issue** section shows one issue with its cover and
+articles. Give it the last part of the issue's address
+(`/journal/issue/<this>`), or leave that empty for the newest numbered issue.
+Its own description is used unless you write a text.

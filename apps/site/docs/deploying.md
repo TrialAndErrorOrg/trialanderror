@@ -111,6 +111,26 @@ to GitHub.
    "Coolify Website Deploy Token" (a Coolify API token with only the deploy
    permission) from the vault.
 
+## GoatCounter
+
+The site counts page views with [GoatCounter](https://github.com/arp242/goatcounter)
+(chosen 2026-11-25 over Umami: one small program with SQLite, no cookies, and an
+API the site reads). Not running yet. To set it up:
+
+1. Run GoatCounter on Coolify from its Docker image (see its README), with a
+   volume for its database, at a name like `stats.trialanderror.org`.
+2. Create the site in GoatCounter, then under **Settings → API** a token with
+   "Read statistics" only. Put it in the 1Password Website vault and point
+   `GOATCOUNTER_TOKEN` in `.env.schema` at it.
+3. In site-content, `settings/site.yaml` → `analytics.goatcounter`: the
+   GoatCounter address. The site then loads GoatCounter's `count.js` on every
+   page, the blog's "Most read" comes from it at build time, and `/admin`
+   shows the numbers to signed-in editors.
+
+Other sites (OJS, say) can count in the same GoatCounter as separate sites. The
+Umami at analytics.trialanderror.org can stay read-only for its history until
+it is switched off.
+
 ## Redirects to set up when this goes live
 
 - `blog.trialanderror.org/*` → `trialanderror.org/blog/*` (keeps old links and

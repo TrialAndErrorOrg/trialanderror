@@ -23,7 +23,7 @@ const latest = posts.filter((p) => p !== lead).slice(0, 4);
 // The category sections skip what is already at the top
 const onTop = new Set([lead, ...latest]);
 
-// Most read over the past year according to Umami, or the hand-picked list in Settings
+// Most read over the past year according to GoatCounter, or the hand-picked list in Settings
 const views = await getPageViews();
 const counted = posts
 	.map((post) => ({ post, views: views.get(`/blog/${post.slug}`) ?? 0 }))
