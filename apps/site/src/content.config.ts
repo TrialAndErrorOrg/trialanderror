@@ -5,7 +5,9 @@ import { contentDir } from "./integrations/content";
 
 /*
  * Pages built from sections. Each file in pages/ of site-content is one page:
- * index.yaml is the homepage, about.yaml is /about, and so on. A page is a
+ * index.yaml is the homepage, about.yaml is /about, and so on. Files in
+ * pages/journal/ are the journal's own pages: pages/journal/for-authors.yaml
+ * is /journal/for-authors, under the journal's menu. A page is a
  * list of sections, drawn top to bottom. Each section type is a component in
  * src/components/sections. Text fields accept Markdown.
  */
@@ -15,6 +17,95 @@ const background = z.enum(["paper", "accent", "accent-soft", "journal", "journal
 /** How a list of journal articles looks: cards with the abstract, or a compact list like a table of contents */
 export const articleStyle = z.enum(["cards", "list"]);
 
+/** Roles on the journal's editorial board, in the order the board lists them */
+/** Who supports the Center: funders, partners and donors, thanked on the site */
+export const supporterKinds = ["funder", "partner", "donor"] as const;
+
+/** The editorial board's roles, then the editorial office's */
+export const journalRoles = ["editor-in-chief", "section-editor", "editor", "advisory-board", "managing-editor", "production-editor", "copy-editor"] as const;
+
+/*
+ * Building blocks for structured pages, like the journal's For Authors page.
+ * Cards and steps are sections of their own, and also go inside the panel
+ * of a chooser option, with text, numbered parts and "read more" boxes.
+ */
+
+/** Required / recommended / not needed: sets a card's badge and frame */
+const status = z.enum(["required", "recommended", "not-needed"]);
+
+const card = z.object({
+	title: z.string(),
+	body: z.string().optional(),
+	status: status.optional(),
+	/** Badge text instead of the status's own ("Required if 2+ authors") */
+	badge: z.string().optional(),
+	/** box: framed; headed: title in a dark bar; soft: tinted; dashed; rule: a line on top; plain: nothing */
+	look: z.enum(["box", "headed", "soft", "dashed", "rule", "plain"]).default("box"),
+	/** Small boxed words under the text (CRediT roles) */
+	/** Markdown, so a tag can be a link: [Methodology](https://…) */
+	tags: z.array(z.string()).default([]),
+	/** Extra text that opens on click */
+	more: z.object({ label: z.string(), body: z.string() }).optional(),
+});
+
+const step = z.object({
+	/** Small text above the title ("Stage 1 · You"). Steps without one are numbered */
+	kicker: z.string().optional(),
+	title: z.string(),
+	text: z.string().optional(),
+	/** Draw this step in the journal colour, for a milestone */
+	highlight: z.boolean().default(false),
+});
+
+const block = z.discriminatedUnion("type", [
+	z.object({ type: z.literal("text"), body: z.string() }),
+	/** Numbered rows, such as the parts of a manuscript in order */
+	z.object({
+		type: z.literal("parts"),
+		items: z.array(z.object({ title: z.string(), text: z.string().default("") })),
+	}),
+	z.object({
+		type: z.literal("cards"),
+		/** Most cards side by side */
+		columns: z.number().int().min(1).max(4).optional(),
+		items: z.array(card),
+	}),
+	z.object({ type: z.literal("steps"), steps: z.array(step) }),
+	z.object({ type: z.literal("more"), label: z.string(), body: z.string() }),
+]);
+
+export type Card = z.infer<typeof card>;
+export type Step = z.infer<typeof step>;
+export type Block = z.infer<typeof block>;
+
+/** The top of every structured section: "Step 1", the title, a line of text */
+const heading = {
+	id: z.string().optional(),
+	eyebrow: z.string().optional(),
+	title: z.string().optional(),
+	intro: z.string().optional(),
+	/** Shorter name for the "On this page" list */
+	short: z.string().optional(),
+};
+
+const option = z.object({
+	/** For links straight to this option (/journal/for-authors#registered-report). Made from the title if empty */
+	id: z.string().optional(),
+	title: z.string(),
+	badge: z.string().optional(),
+	summary: z.string().optional(),
+	facts: z.array(z.object({ label: z.string(), value: z.string() })).default([]),
+	/** The panel's title ("Empirical article: what to include"). The option's title if empty */
+	heading: z.string().optional(),
+	/** Small text beside the panel's title */
+	note: z.string().optional(),
+	/** journal: the chosen card and the panel's title bar are in the journal colour instead of black */
+	tone: z.enum(["ink", "journal"]).default("ink"),
+	blocks: z.array(block).default([]),
+});
+
+export type Option = z.infer<typeof option>;
+
 const section = z.discriminatedUnion("type", [
 	z.object({
 		type: z.literal("hero"),
@@ -22,7 +113,10 @@ const section = z.discriminatedUnion("type", [
 		subtitle: z.string().optional(),
 		text: z.string().optional(),
 		buttons: z.array(button).default([]),
-		color: z.enum(["accent", "journal"]).default("accent"),
+		/** accent: white boxes on orange (the Center), journal: the journal's blue masthead, blog: black boxes on grey */
+		color: z.enum(["accent", "journal", "blog"]).default("accent"),
+		/** Show the journal's numbers (articles, issues, first year) under the text */
+		stats: z.boolean().default(false),
 	}),
 	z.object({
 		type: z.literal("text"),
@@ -30,6 +124,7 @@ const section = z.discriminatedUnion("type", [
 		title: z.string().optional(),
 		body: z.string(),
 		background,
+		buttons: z.array(button).default([]),
 	}),
 	z.object({
 		type: z.literal("features"),
@@ -40,6 +135,8 @@ const section = z.discriminatedUnion("type", [
 				title: z.string(),
 				body: z.string(),
 				link: z.object({ label: z.string(), url: z.string() }).optional(),
+				/** Colour the column like a part of the site: accent (the Center), journal or blog */
+				color: z.enum(["accent", "journal", "blog"]).optional(),
 			}),
 		),
 	}),
@@ -52,12 +149,64 @@ const section = z.discriminatedUnion("type", [
 		type: z.literal("latest-articles"),
 		title: z.string().default("From the Journal"),
 		count: z.number().int().positive().default(4),
-		style: articleStyle.default("cards"),
+		/** featured: the newest big with its cover and the others listed beside it */
+		style: z.enum(["featured", ...articleStyle.options]).default("cards"),
+	}),
+	z.object({
+		type: z.literal("donate"),
+		id: z.string().optional(),
+		title: z.string().optional(),
+		text: z.string().optional(),
+		/** Stripe's buy button, from Stripe's dashboard (Payment Links, Buy button) */
+		stripe: z.object({ buttonId: z.string(), publishableKey: z.string() }).optional(),
+		/** For a bank transfer */
+		bank: z.object({ name: z.string(), iban: z.string(), bic: z.string().optional() }).optional(),
+	}),
+	z.object({
+		type: z.literal("supporters"),
+		id: z.string().optional(),
+		title: z.string().default("With thanks to"),
+		intro: z.string().optional(),
+		/** Which kinds to show, all when empty */
+		kinds: z.array(z.enum(supporterKinds)).default([]),
+	}),
+	z.object({
+		type: z.literal("featured-issue"),
+		id: z.string().optional(),
+		/** Small heading above the issue, like "Special issue" */
+		title: z.string().optional(),
+		/** The issue's slug, the last part of /journal/issue/<slug>. Empty: the newest numbered issue */
+		issue: z.string().optional(),
+		/** Instead of the issue's own description */
+		text: z.string().optional(),
+		count: z.number().int().positive().default(6),
+	}),
+	z.object({
+		type: z.literal("article-types"),
+		id: z.string().optional(),
+		title: z.string().default("Browse by type"),
+		intro: z.string().optional(),
+		/** A line about each type, by its name in the journal ("Empirical") */
+		types: z.array(z.object({ kind: z.string(), text: z.string() })).default([]),
 	}),
 	z.object({
 		type: z.literal("issues"),
 		title: z.string().default("Issues"),
 		count: z.number().int().positive().default(3),
+	}),
+	z.object({
+		type: z.literal("events"),
+		id: z.string().optional(),
+		title: z.string().default("Events"),
+		count: z.number().int().positive().default(3),
+	}),
+	z.object({
+		type: z.literal("editorial-board"),
+		id: z.string().optional(),
+		title: z.string().optional(),
+		intro: z.string().optional(),
+		/** The board (editors), the office (managing, production and copy editors), or both */
+		part: z.enum(["all", "board", "office"]).default("all"),
 	}),
 	z.object({
 		type: z.literal("team"),
@@ -70,6 +219,39 @@ const section = z.discriminatedUnion("type", [
 	z.object({
 		type: z.literal("buttons"),
 		buttons: z.array(button),
+	}),
+	/** "On this page": links to the sections below it that have an anchor and a title */
+	z.object({
+		type: z.literal("contents"),
+		title: z.string().default("On this page"),
+	}),
+	/** Cards to pick from, each opening its own panel ("What are you submitting?") */
+	z.object({
+		type: z.literal("chooser"),
+		...heading,
+		groups: z.array(
+			z.object({
+				title: z.string().optional(),
+				note: z.string().optional(),
+				options: z.array(option),
+			}),
+		),
+	}),
+	z.object({
+		type: z.literal("cards"),
+		...heading,
+		/** Explain the Required / Recommended / Not needed badges above the cards */
+		legend: z.boolean().default(false),
+		/** Most cards side by side */
+		columns: z.number().int().min(1).max(4).optional(),
+		items: z.array(card),
+	}),
+	/** A numbered process. With more than one route, the routes become tabs */
+	z.object({
+		type: z.literal("steps"),
+		...heading,
+		routes: z.array(z.object({ label: z.string().default(""), steps: z.array(step) })),
+		note: z.string().optional(),
 	}),
 ]);
 
@@ -111,6 +293,10 @@ const blog = defineCollection({
 		authors: z.array(z.string()).default([]),
 		doi: z.string().optional(),
 		related: z.array(z.string()).default([]),
+		/** Shown big at the top of the blog's front page, the newest featured post first */
+		featured: z.boolean().default(false),
+		/** The same post on Substack, where readers comment on it */
+		substack: z.url().optional(),
 	}),
 });
 
@@ -131,12 +317,72 @@ const people = defineCollection({
 		links: z.array(z.object({ icon: z.string(), url: z.string() })).default([]),
 		/** Old slugs, which keep redirecting to this person */
 		aliases: z.array(z.string()).default([]),
+		/** Their place on the journal's editorial board, which lists everyone who has one */
+		journal: z
+			.object({
+				role: z.enum(journalRoles),
+				/** The section they edit, like Psychology or Life Sciences */
+				section: z.string().optional(),
+			})
+			.optional(),
 	}),
 });
 
 const categories = defineCollection({
 	loader: glob({ pattern: "**/*.yaml", base: `${contentDir}/categories` }),
-	schema: z.object({ title: z.string() }),
+	schema: z.object({
+		title: z.string(),
+		/** A line under the category's name on the blog's front page and its own page */
+		description: z.string().optional(),
+	}),
 });
 
-export const collections = { pages, blog, people, categories };
+/*
+ * Events: symposia, talks, workshops. Edited in /admin (Events), listed at
+ * /events and in the calendar feed /events.ics.
+ */
+const events = defineCollection({
+	loader: glob({ pattern: "**/*.md", base: `${contentDir}/events` }),
+	schema: z.object({
+		title: z.string(),
+		/** When it starts, in UTC like 2026-03-12T13:00:00Z */
+		start: z.coerce.date(),
+		end: z.coerce.date().optional(),
+		/** A day (or days) rather than set hours: times aren't shown */
+		allDay: z.boolean().default(false),
+		/** Where, like "University Museum Utrecht" */
+		location: z.string().optional(),
+		/** Street address, for maps and calendars */
+		address: z.string().optional(),
+		/** Where to join online */
+		online: z.url().optional(),
+		/** Where to sign up */
+		registration: z.url().optional(),
+		summary: z.string().optional(),
+		image: z.string().optional(),
+		imageAlt: z.string().optional(),
+		/** A blog post about how it went */
+		report: z.string().optional(),
+		/** symposium, talk, workshop... */
+		kind: z.string().optional(),
+	}),
+});
+
+/** Who supports the Center, thanked on the site */
+const supporters = defineCollection({
+	loader: glob({ pattern: "**/*.yaml", base: `${contentDir}/supporters` }),
+	schema: z.object({
+		name: z.string(),
+		kind: z.enum(supporterKinds).default("donor"),
+		url: z.url().optional(),
+		logo: z.string().optional(),
+		/** What they supported, like "the Cultures of Trial and Error series" */
+		note: z.string().optional(),
+		/** The year their support started */
+		since: z.number().int().optional(),
+		/** Shown first within their kind */
+		order: z.number().int().default(0),
+	}),
+});
+
+export const collections = { pages, blog, people, categories, events, supporters };

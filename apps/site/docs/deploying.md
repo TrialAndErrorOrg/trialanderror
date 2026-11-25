@@ -111,14 +111,48 @@ to GitHub.
    "Coolify Website Deploy Token" (a Coolify API token with only the deploy
    permission) from the vault.
 
+## GoatCounter
+
+The site counts page views with [GoatCounter](https://github.com/arp242/goatcounter)
+(chosen 2026-11-25 over Umami: one small program with SQLite, no cookies, and an
+API the site reads). Not running yet. To set it up:
+
+1. Run GoatCounter on Coolify from its Docker image (see its README), with a
+   volume for its database, at a name like `stats.trialanderror.org`.
+2. Create the site in GoatCounter, then under **Settings → API** a token with
+   "Read statistics" only. Put it in the 1Password Website vault and point
+   `GOATCOUNTER_TOKEN` in `.env.schema` at it.
+3. In site-content, `settings/site.yaml` → `analytics.goatcounter`: the
+   GoatCounter address. The site then loads GoatCounter's `count.js` on every
+   page, the blog's "Most read" comes from it at build time, and `/admin`
+   shows the numbers to signed-in editors.
+
+Other sites (OJS, say) can count in the same GoatCounter as separate sites. The
+Umami at analytics.trialanderror.org can stay read-only for its history until
+it is switched off.
+
 ## Redirects to set up when this goes live
 
 - `blog.trialanderror.org/*` → `trialanderror.org/blog/*` (keeps old links and
-  blog DOIs working; `/blog/api/draft` exists for the old preview URL).
+  blog DOIs working; `/blog/api/draft` exists for the old preview URL). A
+  plain rule like this breaks the old blog's lists: `/blog/<n>` should go to
+  `/blog/page/<n>`, `/blog/<category>` to `/blog/category/<category>` and
+  `/author/<slug>` to `/people/<slug>`. The research note of 2026-11-25 in the
+  planning repo (cote/center) has a Caddyfile for one redirect-only service
+  that owns all the old host names, with `redir ... permanent` inside `handle`.
 - `blog.trialanderror.org/author/*` → `trialanderror.org/blog/author/*` falls
   out of the rule above.
 - The old blog's page list (`blog.trialanderror.org/blog/2`) would land on
   `/blog/blog/2`; redirect `/blog/blog/*` to `/blog/page/*` if that matters.
+
+- The journal's PubPub addresses on `journal.trialanderror.org`: send
+  `/pub/*` and `/collection/*` on that domain to this server. The site
+  answers them itself with permanent (301) redirects: `/pub/<slug>` and
+  `/pub/<slug>/release/<n>` to `/journal/<slug>`, `/pub/<slug>/download/pdf`
+  to the article's PDF, `/collection/<slug>` to `/journal/issue/<slug>`
+  (`src/pages/pub`, `src/pages/collection`). Send the rest of the domain to
+  `trialanderror.org/journal/*`. Ask Crossref to update the DOIs to the new
+  addresses as well, so they don't go through the redirect.
 
 ## Elsewhere
 

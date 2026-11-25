@@ -78,8 +78,8 @@ Strapi's preview button, and only matter while something is still in Strapi.
 
 `/api/draft?secret=...&slug=...` is what Strapi's preview button calls. It
 checks the secret against `DRAFT_SECRET`, sets a cookie for an hour and
-redirects to `/preview/blog/<slug>` or `/preview/page/<slug>`, which render
-the draft from Strapi on request. To preview another kind of content later, add
+redirects to `/preview/blog/<slug>`, which renders the draft from Strapi on
+request. Pages left Strapi on 2026-11-25. To preview another kind of content later, add
 a `src/pages/preview/<kind>/[slug].astro` with `export const prerender = false`.
 
 ## Build caches

@@ -2,7 +2,7 @@ import { inferRemoteSize } from "astro:assets";
 import { stripHtml } from "../format";
 import { type NavLink, navigation, site } from "../settings";
 import type { Article, Picture, Term } from "../types";
-import { fetchFileText, fileResponse, fileUrl, getCollection, type UnderlayFile } from "./underlay";
+import { assetHash, fetchFileText, fileResponse, fileUrl, getCollection, type UnderlayFile } from "./underlay";
 
 /*
  * Journal articles, read from each journal's PubPub export on Underlay:
@@ -49,6 +49,10 @@ export interface JournalConfig {
 	theme?: string;
 	/** Shown on the list pages of a journal that is no longer updated */
 	notice?: string;
+	/** The online ISSN, for Google Scholar's citation_issn */
+	issn?: string;
+	/** Indexes that list the journal, shown on its front page */
+	indexedIn?: { name: string; url: string; since?: string }[];
 }
 
 export const JOURNALS = {
@@ -79,6 +83,8 @@ export const JOURNALS = {
 		menu: navigation.journal,
 		issueUrl: (slug) => `/journal/issue/${slug}`,
 		section: "Journal",
+		issn: "2667-1204",
+		indexedIn: [{ name: "DOAJ", url: "https://doaj.org/toc/2667-1204", since: "2025" }],
 	},
 	// The Center's earlier journal, published 2020 to 2023 and kept online as an archive.
 	// Its title and description are those of its PubPub community
@@ -190,7 +196,7 @@ function createJournal(config: JournalConfig) {
 	const journalFileUrl = (file: UnderlayFile) => fileUrl(owner, collection, file);
 	/** Where a download is served on this site, see src/pages/journal/files */
 	const downloadUrl = (file: UnderlayFile) => {
-		const hash = file.$file.replace(/^sha256:/, "");
+		const hash = assetHash(file);
 		return `${config.path}/files/${hash}/${encodeURIComponent(file.fileName ?? hash)}`;
 	};
 	const serveFile = (hash: string, name: string) => fileResponse(owner, collection, hash, name);

@@ -4,20 +4,24 @@ import BlogList from "~/layouts/BlogList.astro";
 import { site } from "~/lib/settings";
 import { getPosts } from "~/lib/sources/blog";
 
+// The archive: every post, newest first. /blog itself is the front page with a selection
 export const getStaticPaths = (async () => {
 	const posts = await getPosts();
 	const total = Math.ceil(posts.length / site.blog.postsPerPage);
-	return Array.from({ length: Math.max(0, total - 1) }, (_, i) => ({ params: { page: String(i + 2) } }));
+	return Array.from({ length: total }, (_, i) => ({ params: { page: String(i + 1) } }));
 }) satisfies GetStaticPaths;
 
 const current = Number(Astro.params.page);
 const posts = await getPosts();
 const perPage = site.blog.postsPerPage;
+const total = Math.ceil(posts.length / perPage);
 ---
 
 <BlogList
-	title={site.blog.title}
-	kicker={`Page ${current}`}
+	title="All posts"
+	kicker={total > 1 ? `Page ${current} of ${total}` : undefined}
+	description={`Everything on ${site.blog.title}, newest first.`}
 	posts={posts.slice((current - 1) * perPage, current * perPage)}
-	page={{ current, total: Math.ceil(posts.length / perPage), href: (n) => (n === 1 ? "/blog" : `/blog/page/${n}`) }}
+	page={{ current, total, href: (n) => `/blog/page/${n}` }}
+	current="all"
 />

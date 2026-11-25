@@ -1,29 +1,131 @@
 ---
-import BlogList from "~/layouts/BlogList.astro";
+import { Icon } from "astro-icon/components";
+import BlogMasthead from "~/components/BlogMasthead.astro";
+import Picture from "~/components/Picture.astro";
+import PostCard from "~/components/PostCard.astro";
+import PostRow from "~/components/PostRow.astro";
+import Base from "~/layouts/Base.astro";
+import { formatDate, listNames } from "~/lib/format";
 import { site } from "~/lib/settings";
-import { getPosts, getTerms } from "~/lib/sources/blog";
+import { getPageViews } from "~/lib/sources/analytics";
+import { getCategories, getPosts } from "~/lib/sources/blog";
+import type { Post } from "~/lib/types";
+
+/*
+ * The blog's front page: the featured post with the latest beside it, the
+ * most read, then a few posts from each category. Every post is in the
+ * archive at /blog/page/1.
+ */
 
 const posts = await getPosts();
-const perPage = site.blog.postsPerPage;
-const categories = await getTerms("category");
+const lead = posts.find((p) => p.featured) ?? posts[0];
+const latest = posts.filter((p) => p !== lead).slice(0, 4);
+// The category sections skip what is already at the top
+const onTop = new Set([lead, ...latest]);
+
+// Most read over the past year according to GoatCounter, or the hand-picked list in Settings
+const views = await getPageViews();
+const counted = posts
+	.map((post) => ({ post, views: views.get(`/blog/${post.slug}`) ?? 0 }))
+	.filter((p) => p.views > 0)
+	.sort((a, b) => b.views - a.views)
+	.map((p) => p.post);
+const popular = (counted.length >= 3 ? counted : site.blog.popular.map((slug) => posts.find((p) => p.slug === slug)).filter((p): p is Post => !!p)).slice(0, 6);
+
+// Categories with the most recent posts first
+const categories = (await getCategories())
+	.filter((c) => c.posts.length > 0)
+	.sort((a, b) => b.posts[0].date.localeCompare(a.posts[0].date))
+	.map((c) => ({ ...c, shown: c.posts.filter((post) => !onTop.has(post)).slice(0, 3) }));
+const since = posts.at(-1)?.date.slice(0, 4);
 ---
 
-<BlogList
-	title={site.blog.title}
-	description={site.blog.description}
-	posts={posts.slice(0, perPage)}
-	featureFirst
-	page={{ current: 1, total: Math.ceil(posts.length / perPage), href: (n) => (n === 1 ? "/blog" : `/blog/page/${n}`) }}
->
-	<ul slot="header" class="flex flex-wrap gap-2">
+<Base title={site.blog.title} description={site.blog.description}>
+	<BlogMasthead />
+
+	<section class="page grid gap-12 py-14 lg:grid-cols-[3fr_2fr]" aria-label="Featured and latest">
 		{
-			categories.map((c) => (
-				<li>
-					<a href={`/blog/category/${c.slug}`} class="label bg-paper hover:bg-accent-soft">
-						{c.title}
-					</a>
-				</li>
-			))
+			lead && (
+				<article class="group relative flex flex-col gap-5">
+					<div class="relative aspect-[16/10] overflow-hidden border-frame border-ink shadow-hard-lg">
+						<Picture image={lead.image} width={1200} eager class="size-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+						{lead.category && <span class="label absolute top-5 left-0 border-l-0">{lead.category.title}</span>}
+					</div>
+					<h2 class="font-heading text-4xl leading-[1.05] font-black tracking-tighter md:text-6xl">
+						<a href={`/blog/${lead.slug}`} class="decoration-accent decoration-4 underline-offset-8 group-hover:underline after:absolute after:inset-0">
+							{lead.title}
+						</a>
+					</h2>
+					{lead.excerpt && <p class="max-w-3xl text-lg md:text-xl">{lead.excerpt}</p>}
+					<p class="text-muted">
+						{lead.authors.length > 0 && <span class="font-semibold text-ink">{listNames(lead.authors.map((a) => a.name))}</span>}
+						{lead.authors.length > 0 && <span aria-hidden="true"> · </span>}
+						<time datetime={lead.date}>{formatDate(lead.date)}</time>
+					</p>
+				</article>
+			)
 		}
-	</ul>
-</BlogList>
+		<div class="flex flex-col">
+			<h2 class="mb-6 border-b-heavy border-ink pb-2 font-heading text-sm font-black tracking-widest uppercase">Latest</h2>
+			{latest.map((post) => <PostRow post={post} />)}
+			<a href="/blog/page/1" class="button button-plain mt-8 self-start">
+				All {posts.length} posts <Icon name="lucide:arrow-right" class="size-5" aria-hidden="true" />
+			</a>
+		</div>
+	</section>
+
+	{
+		popular.length > 0 && (
+			<section class="border-y-frame border-ink bg-subtle py-14">
+				<div class="page">
+					<h2 class="section-title mb-10">Most read</h2>
+					<ol class="grid gap-x-12 gap-y-8 md:grid-cols-2 xl:grid-cols-3">
+						{popular.map((post, i) => (
+							<li class="flex">
+								<PostRow post={post} rank={i + 1} />
+							</li>
+						))}
+					</ol>
+				</div>
+			</section>
+		)
+	}
+
+	{
+		categories
+			.filter((category) => category.shown.length > 0)
+			.map((category) => (
+			<section class="page py-14" aria-labelledby={`category-${category.slug}`}>
+				<div class="mb-8 flex flex-wrap items-end justify-between gap-4">
+					<div class="flex min-w-0 flex-grow flex-col gap-2">
+						<h2 id={`category-${category.slug}`} class="section-title text-3xl md:text-5xl">
+							{category.title}
+						</h2>
+						{category.description && <p class="max-w-2xl text-lg text-muted">{category.description}</p>}
+					</div>
+					<a href={`/blog/category/${category.slug}`} class="button button-plain">
+						All {category.posts.length}
+						<Icon name="lucide:arrow-right" class="size-5" aria-hidden="true" />
+					</a>
+				</div>
+				<div class="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
+					{category.shown.map((post) => (
+						<PostCard post={post} />
+					))}
+				</div>
+			</section>
+		))
+	}
+
+	<section class="page pt-6 pb-4">
+		<div class="flex flex-col items-start gap-5 border-frame border-ink bg-paper p-8 shadow-hard-lg md:flex-row md:items-center md:justify-between md:p-10">
+			<div class="flex flex-col gap-2">
+				<h2 class="font-heading text-3xl font-black tracking-tighter md:text-4xl">The whole archive</h2>
+				<p class="text-lg">{posts.length} posts since {since}, newest first.</p>
+			</div>
+			<a href="/blog/page/1" class="button">
+				Browse all posts <Icon name="lucide:arrow-right" class="size-5" aria-hidden="true" />
+			</a>
+		</div>
+	</section>
+</Base>

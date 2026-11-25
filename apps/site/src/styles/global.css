@@ -95,6 +95,10 @@
 	.tab[data-color="accent-soft"] {
 		--tab: var(--color-accent-soft);
 	}
+	.tab[data-color="ink"] {
+		--tab: var(--color-ink);
+		--tab-text: var(--color-paper);
+	}
 	.tab[data-color="journal"] {
 		--tab: var(--color-journal);
 		--tab-text: var(--color-paper);
@@ -150,6 +154,26 @@
 	}
 	.prose-site :where(iframe) {
 		@apply w-full border-frame border-ink;
+	}
+
+	/* Short Markdown inside cards, steps and panels: tighter than .prose-site */
+	.card-text {
+		@apply flex flex-col gap-3;
+	}
+	.card-text :where(ul) {
+		@apply list-disc pl-5;
+	}
+	.card-text :where(ol) {
+		@apply list-decimal pl-5;
+	}
+	.card-text :where(li + li) {
+		@apply mt-1;
+	}
+	.card-text :where(a) {
+		@apply font-semibold underline decoration-2 underline-offset-4 hover:decoration-accent;
+	}
+	.card-text :where(h3, h4) {
+		@apply font-heading text-lg font-extrabold;
 	}
 
 	/* Drop cap on the first paragraph of a blog post */

@@ -29,6 +29,9 @@ export interface Person {
 	links: { icon: string; url: string }[];
 	/** Old slugs, which redirect to this person's page */
 	aliases?: string[];
+	/** Their place on the journal's editorial board */
+	/** Their place on the journal's editorial team */
+	journal?: { role: JournalRole; section?: string };
 }
 
 export interface Term {
@@ -52,6 +55,10 @@ export interface Post {
 	authors: Person[];
 	description?: string;
 	related: string[];
+	/** Shown big at the top of the blog's front page */
+	featured?: boolean;
+	/** The same post on Substack, where readers comment on it */
+	substack?: string;
 }
 
 export interface Article {
@@ -69,3 +76,5 @@ export interface Article {
 	url: string;
 	license?: { name: string; url: string };
 }
+
+export type JournalRole = "editor-in-chief" | "section-editor" | "editor" | "advisory-board" | "managing-editor" | "production-editor" | "copy-editor";

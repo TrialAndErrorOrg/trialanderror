@@ -1,26 +1,13 @@
 import { type CollectionEntry, getCollection } from "astro:content";
 import { marked } from "marked";
-import type { Person, Picture, Post, Term } from "../types";
+import type { Person, Post, Term } from "../types";
+import { uploadedPicture as picture } from "../uploads";
 
 /*
  * Reads the blog from site-content (blog/, people/, categories/), where /admin
  * edits it. Selected with BLOG_SOURCE=content, the default. Images under
  * /uploads are resized at build like any other; links (Unsplash) are fetched.
  */
-
-const uploads = import.meta.glob<{ default: ImageMetadata }>("@content/uploads/**/*.{webp,jpg,jpeg,png,avif,gif}");
-const uploadsByPath = new Map(
-	Object.entries(uploads).map(([key, load]) => [key.startsWith("@content/") ? key.slice("@content".length) : key.slice(key.indexOf("/uploads/")), load]),
-);
-
-async function picture(path: string | undefined, alt?: string, where?: string): Promise<Picture | undefined> {
-	if (!path) return undefined;
-	if (/^https?:\/\//.test(path)) return { url: path, alt };
-	const load = uploadsByPath.get(path);
-	if (!load) throw new Error(`${where}: ${path} is not in site-content's uploads`);
-	const src = (await load()).default;
-	return { url: src.src, src, width: src.width, height: src.height, alt };
-}
 
 const slugify = (text: string) =>
 	text
@@ -43,6 +30,7 @@ async function toPerson({ id, data }: CollectionEntry<"people">): Promise<Person
 		orcid: data.orcid,
 		links: data.links,
 		aliases: data.aliases,
+		journal: data.journal,
 	};
 }
 
@@ -80,9 +68,23 @@ export async function getPosts(): Promise<Post[]> {
 				authors,
 				description: data.description ?? data.excerpt,
 				related: data.related,
+				featured: data.featured,
+				substack: data.substack,
 			};
 		}),
 	);
+}
+
+/** Blog categories with their descriptions, in /admin's order (by file name) */
+export async function getCategories() {
+	return (await getCollection("categories")).map((c) => ({ slug: c.id, title: c.data.title, description: c.data.description }));
+}
+
+/** Everyone with a role on the journal's editorial board, by last name */
+export async function getEditorialBoard(): Promise<Person[]> {
+	const entries = await getCollection("people", (e) => !!e.data.journal);
+	const byId = await getPeople();
+	return entries.sort((a, b) => a.data.lastName.localeCompare(b.data.lastName)).map((e) => byId.get(e.id)!);
 }
 
 /** Team members, by last name */

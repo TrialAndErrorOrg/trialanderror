@@ -1,0 +1,41 @@
+---
+import { Icon } from "astro-icon/components";
+import type { Section } from "~/content.config";
+import { journal } from "~/lib/sources/journal";
+import Markdown from "../Markdown.astro";
+
+/* The journal's article types, each with its number of articles and a line about it */
+
+type Props = Extract<Section, { type: "article-types" }>;
+const { id, title, intro, types } = Astro.props;
+const source = journal();
+const kinds = await source.getKinds();
+const lines = new Map(types.map((t) => [t.kind.toLowerCase(), t.text]));
+---
+
+<section id={id} class="page scroll-mt-24 py-16">
+	<div class="mb-10 flex flex-col gap-3">
+		<h2 class="section-title text-journal after:bg-journal">{title}</h2>
+		{intro && <Markdown text={intro} class="max-w-3xl text-lg" />}
+	</div>
+	<ul class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+		{
+			kinds.map((kind) => (
+				<li class="card group">
+					<div class="flex flex-grow flex-col gap-2 p-5">
+						<span class="font-heading text-5xl leading-none font-black text-journal">{kind.articles.length}</span>
+						<h3 class="font-heading text-xl leading-tight font-bold tracking-tight">
+							<a href={source.kindUrl(kind.title)} class="card-link">
+								{kind.title}
+							</a>
+						</h3>
+						{lines.get(kind.title.toLowerCase()) && <p class="text-sm text-ink/80">{lines.get(kind.title.toLowerCase())}</p>}
+					</div>
+					<span class="flex items-center justify-end gap-1 px-5 pb-4 font-heading font-bold">
+						Browse <Icon name="lucide:arrow-right" class="size-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+					</span>
+				</li>
+			))
+		}
+	</ul>
+</section>

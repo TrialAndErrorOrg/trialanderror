@@ -6,7 +6,7 @@ import type { Person, Picture, Post, Term } from "../types";
  */
 
 type Rec = { id: string; type: string; data: any };
-type FileRef = { $file: string; width?: number; height?: number; alt?: string; originalUrl?: string };
+type FileRef = { $asset?: string; $file?: string; width?: number; height?: number; alt?: string; originalUrl?: string };
 
 export function fromRecords(byType: Map<string, Rec[]>, fileUrl: (file: FileRef) => string) {
 	const picture = (file?: FileRef): Picture | undefined =>

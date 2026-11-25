@@ -49,7 +49,7 @@ collections:
   - name: pages
     label: Pages
     label_singular: Page
-    description: Pages built from sections. "index" is the homepage and "journal" the journal's front page. Free-text pages (donate, events) still live in Strapi.
+    description: Pages built from sections. "index" is the homepage and "journal" the journal's front page.
     folder: pages
     extension: yaml
     format: yaml
@@ -60,7 +60,8 @@ collections:
       - { name: title, label: Title, widget: string }
       - { name: description, label: Description (for search engines and link previews), widget: text, required: false }
       - { name: showTitle, label: Show the title as a big heading, widget: boolean, default: false }
-      - name: sections
+      - &sections
+        name: sections
         label: Sections
         label_singular: Section
         widget: list
@@ -74,7 +75,8 @@ collections:
               - { name: title, label: Title (each line gets its own box), widget: text }
               - { name: subtitle, label: Subtitle, widget: string, required: false }
               - { name: text, label: Text, widget: markdown, required: false }
-              - { name: color, label: Colour, widget: select, options: [{ label: Orange, value: accent }, { label: Journal blue, value: journal }], default: accent }
+              - { name: color, label: Colour, widget: select, options: [{ label: Orange (the Center), value: accent }, { label: Journal blue, value: journal }, { label: Black and white (the Blog), value: blog }], default: accent }
+              - { name: stats, label: "Show the journal's numbers (articles, issues, since when)", widget: boolean, default: false, required: false }
               - &buttons
                 name: buttons
                 label: Buttons
@@ -93,6 +95,7 @@ collections:
               - { name: id, label: Anchor (for links like /about#mission), widget: string, required: false }
               - { name: body, label: Text, widget: markdown }
               - { name: background, label: Background, widget: select, options: [paper, accent, accent-soft, journal, journal-soft], default: paper }
+              - *buttons
           - name: features
             label: Columns
             widget: object
@@ -106,6 +109,7 @@ collections:
                 fields:
                   - { name: title, label: Title, widget: string }
                   - { name: body, label: Text, widget: markdown }
+                  - { name: color, label: Colour, widget: select, required: false, options: [{ label: "Orange (the Center)", value: accent }, { label: Journal blue, value: journal }, { label: Black and white (the Blog), value: blog }] }
                   - name: link
                     label: Link
                     widget: object
@@ -127,7 +131,68 @@ collections:
             fields:
               - { name: title, label: Title, widget: string, default: From the Journal }
               - { name: count, label: How many, widget: number, value_type: int, default: 4, min: 1 }
-              - { name: style, label: Look, widget: select, options: [{ label: Cards with the abstract, value: cards }, { label: Compact list, value: list }], default: cards }
+              - { name: style, label: Look, widget: select, options: [{ label: The newest big with the others beside it, value: featured }, { label: Cards with the abstract, value: cards }, { label: Compact list, value: list }], default: cards }
+          - name: donate
+            label: Donate (Stripe button and bank details)
+            widget: object
+            summary: "{{title}}"
+            fields:
+              - { name: title, label: Title, widget: string, required: false }
+              - { name: text, label: Text, widget: markdown, required: false }
+              - name: stripe
+                label: Stripe buy button
+                widget: object
+                required: false
+                hint: From Stripe's dashboard, Payment Links, Buy button
+                fields:
+                  - { name: buttonId, label: Button ID (buy_btn_...), widget: string }
+                  - { name: publishableKey, label: Publishable key (pk_live_...), widget: string }
+              - name: bank
+                label: Bank transfer
+                widget: object
+                required: false
+                fields:
+                  - { name: name, label: Account name, widget: string }
+                  - { name: iban, label: IBAN, widget: string }
+                  - { name: bic, label: BIC, widget: string, required: false }
+              - { name: id, label: "Anchor (link to it with #anchor)", widget: string, required: false }
+          - name: supporters
+            label: Supporters (from Supporters)
+            widget: object
+            summary: "{{title}}"
+            fields:
+              - { name: title, label: Title, widget: string, default: With thanks to }
+              - { name: intro, label: Text above, widget: markdown, required: false }
+              - { name: kinds, label: Show, widget: select, multiple: true, required: false, options: [{ label: Funders, value: funder }, { label: Partners, value: partner }, { label: Donors, value: donor }], hint: Empty shows everyone }
+              - { name: id, label: "Anchor (link to it with #anchor)", widget: string, required: false }
+          - name: featured-issue
+            label: Featured journal issue
+            widget: object
+            summary: "{{title}} {{issue}}"
+            fields:
+              - { name: title, label: Small heading, widget: string, required: false, hint: 'Like "Special issue" or "New issue". Empty shows "Featured issue"' }
+              - { name: issue, label: Issue, widget: string, required: false, hint: "The last part of the issue's address, /journal/issue/<this>. Empty shows the newest numbered issue" }
+              - { name: text, label: Text, widget: markdown, required: false, hint: "Empty uses the issue's own description" }
+              - { name: count, label: How many articles, widget: number, value_type: int, default: 6, min: 1 }
+              - { name: id, label: "Anchor (link to it with #anchor)", widget: string, required: false }
+          - name: article-types
+            label: Journal article types
+            widget: object
+            summary: "{{title}}"
+            fields:
+              - { name: title, label: Title, widget: string, default: Browse by type }
+              - { name: id, label: "Anchor (link to it with #anchor)", widget: string, required: false }
+              - { name: intro, label: Text under the title, widget: markdown, required: false }
+              - name: types
+                label: A line about each type
+                label_singular: Type
+                widget: list
+                required: false
+                summary: "{{kind}}"
+                hint: Types without a line still show, with their number of articles
+                fields:
+                  - { name: kind, label: "Type, as the journal names it (Empirical, Meta-Research...)", widget: string }
+                  - { name: text, label: Line, widget: string }
           - name: issues
             label: Latest issues
             widget: object
@@ -135,6 +200,23 @@ collections:
             fields:
               - { name: title, label: Title, widget: string, default: Issues }
               - { name: count, label: How many, widget: number, value_type: int, default: 3, min: 1 }
+          - name: events
+            label: Events (upcoming, or the latest when none are planned)
+            widget: object
+            summary: "{{title}}"
+            fields:
+              - { name: title, label: Title, widget: string, default: Events }
+              - { name: id, label: "Anchor (link to it with #anchor)", widget: string, required: false }
+              - { name: count, label: How many, widget: number, value_type: int, default: 3, min: 1 }
+          - name: editorial-board
+            label: Editorial team (everyone with a journal role in People)
+            widget: object
+            summary: "{{title}}"
+            fields:
+              - { name: title, label: Title, widget: string, required: false }
+              - { name: id, label: "Anchor (link to it with #anchor)", widget: string, required: false }
+              - { name: intro, label: Text above the team, widget: markdown, required: false }
+              - { name: part, label: Who, widget: select, options: [{ label: "Board and office", value: all }, { label: "Editorial board (editors)", value: board }, { label: "Editorial office (managing, production and copy editors)", value: office }], default: all }
           - name: team
             label: Team
             widget: object
@@ -142,6 +224,14 @@ collections:
             fields:
               - { name: title, label: Title, widget: string, default: Meet the Team }
               - { name: id, label: Anchor, widget: string, required: false }
+          - name: announcement
+            label: Announcement (a line across the top of every page)
+            widget: object
+            required: false
+            fields:
+              - { name: text, label: Text, widget: string }
+              - { name: url, label: Link, widget: string, required: false }
+              - { name: until, label: Hide after, widget: datetime, required: false, output_utc: true }
           - name: newsletter
             label: Newsletter sign-up
             widget: object
@@ -151,6 +241,182 @@ collections:
             widget: object
             fields:
               - *buttons
+          # Building blocks for structured pages like the journal's For Authors page
+          - name: contents
+            label: On this page (links to the sections below)
+            widget: object
+            summary: "{{title}}"
+            fields:
+              - { name: title, label: Title, widget: string, default: On this page }
+          - name: chooser
+            label: Chooser (cards that each open a panel)
+            widget: object
+            summary: "{{title}}"
+            fields:
+              - &eyebrow { name: eyebrow, label: Small text above the title (“Step 1”), widget: string, required: false }
+              - &title { name: title, label: Title, widget: string, required: false }
+              - &id { name: id, label: "Anchor (for links like #types)", widget: string, required: false }
+              - &short { name: short, label: Short name in “On this page”, widget: string, required: false }
+              - &intro { name: intro, label: Intro, widget: markdown, required: false }
+              - name: groups
+                label: Groups of cards
+                label_singular: Group
+                widget: list
+                summary: "{{title}}"
+                fields:
+                  - { name: title, label: Title (“What are you submitting?”), widget: string, required: false }
+                  - { name: note, label: Note beside the title, widget: string, required: false }
+                  - name: options
+                    label: Cards
+                    label_singular: Card
+                    widget: list
+                    summary: "{{title}}"
+                    fields:
+                      - { name: title, label: Title, widget: string }
+                      - { name: id, label: "Anchor (link straight to it with #anchor; made from the title if empty)", widget: string, required: false }
+                      - { name: badge, label: Badge (“New”, “Pilot”), widget: string, required: false }
+                      - { name: summary, label: One-line summary, widget: text, required: false }
+                      - name: facts
+                        label: Facts on the card
+                        label_singular: Fact
+                        widget: list
+                        required: false
+                        summary: "{{label}}: {{value}}"
+                        fields:
+                          - { name: label, label: Label (“Review”), widget: string }
+                          - { name: value, label: Value (“standard open review”), widget: string }
+                      - { name: tone, label: Colour when chosen, widget: select, options: [{ label: Black, value: ink }, { label: Journal blue, value: journal }], default: ink }
+                      - { name: heading, label: Panel title (the card’s title if empty), widget: string, required: false }
+                      - { name: note, label: Small text beside the panel title, widget: string, required: false }
+                      - name: blocks
+                        label: Panel content
+                        label_singular: Block
+                        hint: Leave empty for a card that only informs, with nothing to open
+                        widget: list
+                        typeKey: type
+                        types:
+                          - name: text
+                            label: Text
+                            widget: object
+                            fields:
+                              - { name: body, label: Text, widget: markdown }
+                          - name: parts
+                            label: Numbered parts
+                            widget: object
+                            fields:
+                              - name: items
+                                label: Parts
+                                label_singular: Part
+                                widget: list
+                                summary: "{{title}}"
+                                fields:
+                                  - { name: title, label: Title, widget: string }
+                                  - { name: text, label: Text, widget: markdown, required: false }
+                          - name: cards
+                            label: Cards
+                            widget: object
+                            fields:
+                              - { name: columns, label: Most cards side by side, widget: number, value_type: int, min: 1, max: 4, required: false }
+                              - &cards
+                                name: items
+                                label: Cards
+                                label_singular: Card
+                                widget: list
+                                summary: "{{title}}"
+                                fields:
+                                  - { name: title, label: Title, widget: string }
+                                  - { name: body, label: Text, widget: markdown, required: false }
+                                  - { name: status, label: Status, widget: select, required: false, options: [{ label: Required, value: required }, { label: Recommended, value: recommended }, { label: Not needed, value: not-needed }] }
+                                  - { name: badge, label: Badge text (instead of the status’s own), widget: string, required: false }
+                                  - name: look
+                                    label: Look
+                                    widget: select
+                                    default: box
+                                    options:
+                                      - { label: Framed, value: box }
+                                      - { label: Title in a dark bar, value: headed }
+                                      - { label: Tinted, value: soft }
+                                      - { label: Dashed frame, value: dashed }
+                                      - { label: Line on top, value: rule }
+                                      - { label: No frame, value: plain }
+                                  - { name: tags, label: Small boxed words under the text, widget: list, required: false, hint: "Separate with commas. For a link, write [Word](https://…)" }
+                                  - name: more
+                                    label: Extra text that opens on click
+                                    widget: object
+                                    required: false
+                                    fields:
+                                      - { name: label, label: Button label, widget: string }
+                                      - { name: body, label: Text, widget: markdown }
+                          - name: steps
+                            label: Steps
+                            widget: object
+                            fields:
+                              - &steps
+                                name: steps
+                                label: Steps
+                                label_singular: Step
+                                widget: list
+                                summary: "{{title}}"
+                                fields:
+                                  - { name: title, label: Title, widget: string }
+                                  - { name: kicker, label: Small text above (“Stage 1 · You”; numbered if empty), widget: string, required: false }
+                                  - { name: text, label: Text, widget: markdown, required: false }
+                                  - { name: highlight, label: Highlight (a milestone), widget: boolean, default: false }
+                          - name: more
+                            label: Read more (opens on click)
+                            widget: object
+                            summary: "{{label}}"
+                            fields:
+                              - { name: label, label: Button label, widget: string }
+                              - { name: body, label: Text, widget: markdown }
+          - name: cards
+            label: Cards
+            widget: object
+            summary: "{{title}}"
+            fields:
+              - *eyebrow
+              - *title
+              - *id
+              - *short
+              - *intro
+              - { name: legend, label: Explain the Required / Recommended / Not needed badges, widget: boolean, default: false }
+              - { name: columns, label: Most cards side by side, widget: number, value_type: int, min: 1, max: 4, required: false }
+              - *cards
+          - name: steps
+            label: Steps (a numbered process)
+            widget: object
+            summary: "{{title}}"
+            fields:
+              - *eyebrow
+              - *title
+              - *id
+              - *short
+              - *intro
+              - name: routes
+                label: Routes (more than one become tabs)
+                label_singular: Route
+                widget: list
+                summary: "{{label}}"
+                fields:
+                  - { name: label, label: Tab label, widget: string, required: false }
+                  - *steps
+              - { name: note, label: Note under the steps, widget: markdown, required: false }
+
+  - name: journal-pages
+    label: Journal pages
+    label_singular: Journal page
+    description: Pages under /journal, in the journal's colours and under its menu (for-authors is /journal/for-authors). They replace the PubPub page at the same address.
+    folder: pages/journal
+    extension: yaml
+    format: yaml
+    create: true
+    slug: "{{slug}}"
+    identifier_field: title
+    fields:
+      - { name: title, label: Title, widget: string }
+      - { name: description, label: Text under the title (also for search engines and link previews), widget: text, required: false }
+      - { name: showTitle, label: Show the title as a big heading, widget: boolean, default: true }
+      - *sections
 
   - name: blog
     label: Blog
@@ -186,6 +452,37 @@ collections:
       - { name: doi, label: DOI, widget: string, required: false, hint: "Only the DOI, like 10.36850/abcd-1234" }
       - { name: related, label: Related posts, widget: relation, collection: blog, value_field: "{{slug}}", search_fields: [title], display_fields: [title], multiple: true, required: false }
       - { name: description, label: Description for search engines (if not the excerpt), widget: text, required: false }
+      - { name: featured, label: Featured (big at the top of the blog's front page), widget: boolean, default: false, required: false }
+      - { name: substack, label: The post on Substack (its address), widget: string, required: false, hint: "Readers are sent there to comment, like https://centeroftrialanderror.substack.com/p/..." }
+
+  - name: events
+    label: Events
+    label_singular: Event
+    description: Symposia, talks and workshops, listed at /events and in the calendar feed.
+    folder: events
+    extension: md
+    format: frontmatter
+    create: true
+    slug: "{{year}}-{{slug}}"
+    summary: "{{start | date('YYYY-MM-DD')}} {{title}}"
+    sortable_fields: [start, title]
+    media_folder: /uploads/events
+    public_folder: /uploads/events
+    fields:
+      - { name: title, label: Title, widget: string }
+      - { name: kind, label: "Kind (symposium, talk, workshop...)", widget: string, required: false }
+      - { name: start, label: Starts, widget: datetime, output_utc: true }
+      - { name: end, label: Ends, widget: datetime, output_utc: true, required: false }
+      - { name: allDay, label: "All day (don't show times)", widget: boolean, default: false, required: false }
+      - { name: location, label: "Where (University Museum Utrecht)", widget: string, required: false }
+      - { name: address, label: Address, widget: string, required: false }
+      - { name: online, label: Link to join online, widget: string, required: false }
+      - { name: registration, label: Link to sign up, widget: string, required: false }
+      - { name: summary, label: One or two sentences about it, widget: text, required: false }
+      - { name: image, label: Image, widget: image, required: false }
+      - { name: imageAlt, label: Image description (for screen readers), widget: string, required: false }
+      - { name: body, label: Programme and details, widget: markdown, required: false }
+      - { name: report, label: Blog post about how it went, widget: relation, collection: blog, value_field: "{{slug}}", search_fields: [title], display_fields: [title], required: false }
 
   - name: people
     label: People
@@ -211,6 +508,25 @@ collections:
       - { name: image, label: Photo, widget: image, required: false }
       - { name: email, label: Email (shown for team members), widget: string, required: false }
       - { name: orcid, label: ORCID iD, widget: string, required: false, hint: "Like https://orcid.org/0000-0002-1825-0097" }
+      - name: journal
+        label: Journal editorial team
+        widget: object
+        required: false
+        collapsed: true
+        hint: Fill in to list this person on the journal's editorial team page
+        fields:
+          - name: role
+            label: Role
+            widget: select
+            options:
+              - { label: Editor-in-Chief, value: editor-in-chief }
+              - { label: Section Editor, value: section-editor }
+              - { label: Editor, value: editor }
+              - { label: Advisory Board, value: advisory-board }
+              - { label: Managing Editor (editorial office), value: managing-editor }
+              - { label: Production Editor (editorial office), value: production-editor }
+              - { label: Copy Editor (editorial office), value: copy-editor }
+          - { name: section, label: "Section they edit (Psychology, Life Sciences...)", widget: string, required: false }
       - name: links
         label: Links
         widget: list
@@ -220,6 +536,28 @@ collections:
           - { name: icon, label: Kind, widget: select, options: [website, bluesky, mastodon, linkedin, github, twitter] }
           - { name: url, label: Link, widget: string }
       - { name: aliases, label: Old addresses (leave as they are), widget: list, required: false, hint: "Earlier /people/... names, which keep redirecting here" }
+
+  - name: supporters
+    label: Supporters
+    label_singular: Supporter
+    description: Funders, partners and donors, thanked on the Donate page and wherever a Supporters section is placed.
+    folder: supporters
+    extension: yaml
+    format: yaml
+    create: true
+    slug: "{{name}}"
+    identifier_field: name
+    summary: "{{name}} ({{kind}})"
+    media_folder: /uploads/supporters
+    public_folder: /uploads/supporters
+    fields:
+      - { name: name, label: Name, widget: string }
+      - { name: kind, label: Kind, widget: select, options: [{ label: "Funder (grants, subsidies)", value: funder }, { label: "Partner (organisations we work with)", value: partner }, { label: "Donor (people and organisations who gave)", value: donor }], default: donor }
+      - { name: url, label: Website, widget: string, required: false }
+      - { name: logo, label: Logo, widget: image, required: false, hint: Leave empty for people; the name is shown instead }
+      - { name: note, label: "What they supported (optional)", widget: string, required: false }
+      - { name: since, label: Since (year), widget: number, value_type: int, required: false }
+      - { name: order, label: Order (higher first), widget: number, value_type: int, default: 0, required: false }
 
   - name: categories
     label: Blog categories
@@ -232,6 +570,7 @@ collections:
     identifier_field: title
     fields:
       - { name: title, label: Name, widget: string }
+      - { name: description, label: One line about the category, widget: string, required: false }
 
   - name: settings
     label: Settings
@@ -254,6 +593,8 @@ collections:
               - { name: description, label: Description, widget: text }
               - { name: postsPerPage, label: Posts per page, widget: number, value_type: int }
               - { name: pitchEmail, label: Email for blog pitches, widget: string, required: false }
+              - { name: substack, label: Substack address, widget: string, required: false, hint: "Where readers subscribe, like https://centeroftrialanderror.substack.com" }
+              - { name: popular, label: "Most read (used when the analytics can't be reached)", widget: relation, collection: blog, value_field: "{{slug}}", search_fields: [title], display_fields: [title], multiple: true, required: false }
           - name: journal
             label: Journal
             widget: object
@@ -274,8 +615,7 @@ collections:
             widget: object
             required: false
             fields:
-              - { name: script, label: Script address, widget: string }
-              - { name: websiteId, label: Website ID, widget: string }
+              - { name: goatcounter, label: GoatCounter address, widget: string, hint: "Like https://stats.trialanderror.org. The site counts page views there, without cookies" }
           - name: adTracking
             label: Google Ads conversion tracking
             widget: object
@@ -295,7 +635,7 @@ collections:
               - { name: title, label: Title, widget: string }
               - { name: url, label: Link (leave empty for a dropdown), widget: string, required: false }
               - { name: description, label: Description, widget: string, required: false }
-              - { name: color, label: Tab colour, widget: select, options: [{ label: Orange, value: accent }, { label: Light orange, value: accent-soft }, { label: Journal blue, value: journal }], required: false }
+              - { name: color, label: Tab colour, widget: select, options: [{ label: Orange, value: accent }, { label: Light orange, value: accent-soft }, { label: Journal blue, value: journal }, { label: Black, value: ink }], required: false }
               - name: children
                 label: Dropdown links
                 widget: list

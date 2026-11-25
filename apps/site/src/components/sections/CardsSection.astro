@@ -1,0 +1,26 @@
+---
+import type { Section } from "~/content.config";
+import Cards from "../blocks/Cards.astro";
+import { badge, badgeClass, statusLabels } from "../blocks/status";
+import SectionHeading from "./SectionHeading.astro";
+
+type Props = Extract<Section, { type: "cards" }>;
+const { id, eyebrow, title, intro, legend, columns, items } = Astro.props;
+const used = (Object.keys(statusLabels) as (keyof typeof statusLabels)[]).filter((s) => items.some((card) => card.status === s));
+---
+
+<section id={id} class="page scroll-mt-24 py-12">
+	<SectionHeading eyebrow={eyebrow} title={title} intro={intro}>
+		{
+			legend && used.length > 0 && (
+				<p class="flex flex-wrap items-center gap-2 text-sm">
+					Key:
+					{used.map((s) => (
+						<span class:list={[badge, badgeClass[s]]}>{statusLabels[s]}</span>
+					))}
+				</p>
+			)
+		}
+	</SectionHeading>
+	<Cards items={items} columns={columns} />
+</section>

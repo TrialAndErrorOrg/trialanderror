@@ -9,7 +9,7 @@ const link = z.object({
 	url: z.string().optional(),
 	description: z.string().optional(),
 	/** Section colour for the header tab: accent (orange, default), accent-soft (light orange) or journal (blue) */
-	color: z.enum(["accent", "accent-soft", "journal"]).optional(),
+	color: z.enum(["accent", "accent-soft", "journal", "ink"]).optional(),
 	/** Show as a button instead of a plain link */
 	button: z.boolean().optional(),
 	get children() {
@@ -29,6 +29,10 @@ const siteSchema = z.object({
 		description: z.string(),
 		postsPerPage: z.number().int().positive(),
 		pitchEmail: z.string().optional(),
+		/** The blog's Substack, where readers subscribe and comment */
+		substack: z.url().optional(),
+		/** Slugs of the most read posts, for when GoatCounter can't be asked */
+		popular: z.array(z.string()).default([]),
 	}),
 	journal: z.object({
 		title: z.string(),
@@ -37,6 +41,14 @@ const siteSchema = z.object({
 		/** How article lists (all articles, issues, types) look: cards with the abstract, or a compact list */
 		listStyle: z.enum(["cards", "list"]).default("cards"),
 	}),
+	/** A line across the top of every page, for news that shouldn't be missed. Hidden after `until` */
+	announcement: z
+		.object({
+			text: z.string(),
+			url: z.string().optional(),
+			until: z.coerce.date().optional(),
+		})
+		.optional(),
 	newsletter: z.object({
 		title: z.string(),
 		text: z.string(),
@@ -44,8 +56,8 @@ const siteSchema = z.object({
 	}),
 	analytics: z
 		.object({
-			script: z.url(),
-			websiteId: z.string(),
+			/** The GoatCounter site, like https://stats.trialanderror.org */
+			goatcounter: z.url(),
 		})
 		.optional(),
 	adTracking: z

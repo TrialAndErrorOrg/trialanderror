@@ -1,0 +1,66 @@
+---
+import { Icon } from "astro-icon/components";
+import EventCard from "~/components/EventCard.astro";
+import EventsScript from "~/components/EventsScript.astro";
+import Base from "~/layouts/Base.astro";
+import { site } from "~/lib/settings";
+import { getEventsByTime } from "~/lib/sources/events";
+
+const { upcoming, past } = await getEventsByTime();
+const description = "Symposia, talks and workshops by the Center of Trial and Error, about failure, openness and how research is done.";
+---
+
+<Base title="Events" description={description}>
+	<div class="border-b-frame border-ink bg-accent-soft">
+		<div class="page flex flex-col gap-5 py-12 md:py-16">
+			<h1 class="self-start border-heavy border-ink bg-accent px-4 pt-3 pb-1 font-heading text-5xl leading-none font-black tracking-tighter md:px-6 md:text-7xl">Events</h1>
+			<p class="max-w-3xl text-lg font-medium md:text-xl">{description}</p>
+			<div class="flex flex-wrap gap-3">
+				<a href="/events.ics" class="button button-plain">
+					<Icon name="lucide:calendar-plus" class="size-5" aria-hidden="true" /> Subscribe in your calendar
+				</a>
+				{
+					site.blog.substack && (
+						<a href={`${site.blog.substack}/subscribe`} class="button button-plain">
+							<Icon name="lucide:mail" class="size-5" aria-hidden="true" /> Hear about them by email
+						</a>
+					)
+				}
+			</div>
+		</div>
+	</div>
+
+	<section class="page py-12" aria-labelledby="upcoming">
+		<h2 id="upcoming" class="section-title mb-8">Coming up</h2>
+		{
+			upcoming.length > 0 && (
+				<ul class="flex flex-col gap-6" data-upcoming>
+					{upcoming.map((event) => (
+						<li>
+							<EventCard event={event} upcoming />
+						</li>
+					))}
+				</ul>
+			)
+		}
+		<p class="border-frame border-dashed border-ink p-6 text-lg" data-none hidden={upcoming.length > 0}>
+			Nothing planned right now. Subscribe to the calendar above, or to our newsletter, to hear about the next one.
+		</p>
+	</section>
+
+	{
+		past.length > 0 && (
+			<section class="page py-12" aria-labelledby="past">
+				<h2 id="past" class="section-title mb-8">Past events</h2>
+				<ul class="flex flex-col gap-6">
+					{past.map((event) => (
+						<li>
+							<EventCard event={event} />
+						</li>
+					))}
+				</ul>
+			</section>
+		)
+	}
+	<EventsScript />
+</Base>

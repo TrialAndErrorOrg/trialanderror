@@ -1,0 +1,51 @@
+---
+import { BRANDS, behind, type SiteSection } from "~/lib/section";
+import Logo from "./Logo.astro";
+
+/*
+ * The name of the part of the site the reader is in, in its colour, with the
+ * other two parts' boxes peeking out behind it, like the stacked logos of
+ * the old Center, Journal and Blog sites. It always leads home.
+ */
+
+interface Props {
+	section: SiteSection;
+	/** Bigger, for the footer */
+	large?: boolean;
+	class?: string;
+}
+
+const { section, large = false, class: className } = Astro.props;
+const brand = BRANDS[section];
+const [first, second] = behind(section);
+---
+
+<a
+	href="/"
+	class:list={["group/brand relative isolate inline-flex shrink-0 items-center", large ? "mt-3 mr-5" : "mt-2 mr-3", className]}
+	aria-label={section === "center" ? "Center of Trial & Error, home" : `${brand.lines.join(" ")}, part of the Center of Trial & Error: home`}
+	title="Home"
+>
+	<span
+		class:list={[
+			"absolute inset-0 -z-20 border-frame border-ink transition-transform duration-200 ease-out",
+			BRANDS[second].box,
+			large ? "translate-x-4 -translate-y-3 group-hover/brand:translate-x-6 group-hover/brand:-translate-y-4" : "translate-x-3.5 -translate-y-2.5 group-hover/brand:translate-x-5 group-hover/brand:-translate-y-3.5",
+		]}
+		aria-hidden="true"
+	></span>
+	<span
+		class:list={[
+			"absolute inset-0 -z-10 border-frame border-ink transition-transform duration-200 ease-out",
+			BRANDS[first].box,
+			large ? "translate-x-2 -translate-y-1.5 group-hover/brand:translate-x-3 group-hover/brand:-translate-y-2" : "translate-x-1.5 -translate-y-1 group-hover/brand:translate-x-2 group-hover/brand:-translate-y-1.5",
+		]}
+		aria-hidden="true"
+	></span>
+	<span class:list={["flex items-center border-frame border-ink", brand.box, large ? "gap-3 px-4 py-3" : "gap-2 px-2.5 py-1.5 md:gap-2.5 md:px-3"]}>
+		<Logo class={large ? "size-12" : "size-7 md:size-10"} />
+		<span class:list={["font-heading leading-[0.95] font-black tracking-tighter", large ? "text-2xl" : "text-base md:text-xl"]}>
+			{brand.lines[0]}<br />{brand.lines[1]}
+		</span>
+	</span>
+</a>

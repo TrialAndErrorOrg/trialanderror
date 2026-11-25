@@ -3,7 +3,7 @@ import type { Section } from "~/content.config";
 import Markdown from "../Markdown.astro";
 
 type Props = Extract<Section, { type: "text" }>;
-const { id, title, body, background } = Astro.props;
+const { id, title, body, background, buttons } = Astro.props;
 
 const backgrounds = {
 	paper: "bg-paper",
@@ -18,5 +18,16 @@ const backgrounds = {
 	<div class="page">
 		{title && <h2 class="section-title mb-8">{title}</h2>}
 		<Markdown text={body} class:list={["prose-site", background === "journal" && "prose-invert"]} />
+		{
+			buttons.length > 0 && (
+				<div class="mt-8 flex flex-wrap gap-4">
+					{buttons.map((b) => (
+						<a href={b.url} class:list={["button", b.style === "plain" && "button-plain"]}>
+							{b.label}
+						</a>
+					))}
+				</div>
+			)
+		}
 	</div>
 </section>

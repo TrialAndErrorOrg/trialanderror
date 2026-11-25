@@ -1,19 +1,28 @@
 ---
 import type { GetStaticPaths } from "astro";
+import { getCollection } from "astro:content";
 import JournalArticle from "~/layouts/JournalArticle.astro";
 import JournalPage from "~/layouts/JournalPage.astro";
+import SectionsPage from "~/layouts/SectionsPage.astro";
 import { getArticleDetails, prefetchArticles } from "~/lib/journal-article";
-import { ARTICLE_PAGES, getArticles, getPages } from "~/lib/sources/journal";
+import { ARTICLE_PAGES, getArticles, getPages, journal } from "~/lib/sources/journal";
 
 export const getStaticPaths = (async () => {
+	// Pages built from sections in site-content (pages/journal/<slug>.yaml) win over everything else at their address
+	const local = (await getCollection("pages"))
+		.filter((p) => p.id.startsWith("journal/"))
+		.map((p) => ({ slug: p.id.slice("journal/".length), data: p.data }));
+	const taken = new Set(local.map((p) => p.slug));
+	const sectionPages = local.map((p) => ({ params: { slug: p.slug }, props: { sections: p.data } }));
 	// The journal's own pages from PubPub (For Authors, Editorial Board...) share the address space
-	const pages = (await getPages()).map((page) => ({ params: { slug: page.slug }, props: { page } }));
-	if (!ARTICLE_PAGES) return pages;
+	const pages = (await getPages()).filter((p) => !taken.has(p.slug)).map((page) => ({ params: { slug: page.slug }, props: { page } }));
+	if (!ARTICLE_PAGES) return [...sectionPages, ...pages];
 	const articles = await getArticles();
 	await prefetchArticles(articles);
 	return [
+		...sectionPages,
 		...pages,
-		...articles.map((article) => {
+		...articles.filter((article) => !taken.has(article.slug)).map((article) => {
 			const issue = article.issues[0]?.slug;
 			const related = issue
 				? articles.filter((a) => a.id !== article.id && a.issues.some((i) => i.slug === issue)).slice(0, 3)
@@ -23,8 +32,16 @@ export const getStaticPaths = (async () => {
 	];
 }) satisfies GetStaticPaths;
 
-const { page, article, related } = Astro.props;
+const { sections, page, article, related } = Astro.props;
 const details = article && (await getArticleDetails(article));
 ---
 
-{page ? <JournalPage page={page} /> : article && details && <JournalArticle article={article} details={details} related={related} />}
+{
+	sections ? (
+		<SectionsPage page={sections} journal={journal()} searchSection="Journal" />
+	) : page ? (
+		<JournalPage page={page} />
+	) : (
+		article && details && <JournalArticle article={article} details={details} related={related} />
+	)
+}

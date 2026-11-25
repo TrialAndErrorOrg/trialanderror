@@ -1,0 +1,148 @@
+---
+import { Icon } from "astro-icon/components";
+import { getEditorialBoard } from "~/lib/sources/blog";
+import { getArticles, getIssues, journal } from "~/lib/sources/journal";
+import { site } from "~/lib/settings";
+
+/*
+ * The journal's masthead: its name on the full journal blue, with what a
+ * reader checks before trusting a journal beside it (who edits it, who
+ * publishes it, its ISSN, where it is indexed, its licence) and its numbers.
+ */
+
+interface Props {
+	lines: string[];
+	stats?: boolean;
+}
+
+const { lines, stats = false } = Astro.props;
+const config = journal("jote").config;
+const [articles, issues, board] = await Promise.all([getArticles(), getIssues(), getEditorialBoard()]);
+const chief = board.find((p) => p.journal?.role === "editor-in-chief");
+
+// The licence most articles carry
+const licenses = new Map<string, { name: string; url: string; count: number }>();
+for (const article of articles) {
+	if (!article.license) continue;
+	const entry = licenses.get(article.license.url) ?? { ...article.license, count: 0 };
+	entry.count++;
+	licenses.set(article.license.url, entry);
+}
+const license = [...licenses.values()].sort((a, b) => b.count - a.count)[0];
+
+const numbers = stats
+	? [
+			{ value: articles.length, label: "articles" },
+			{ value: issues.filter((i) => !i.rolling).length, label: "issues" },
+			{ value: articles.at(-1)?.date.slice(0, 4), label: "since" },
+		]
+	: [];
+const link = "underline decoration-paper/40 decoration-1 underline-offset-4 hover:decoration-accent";
+---
+
+<section class="border-b-frame border-ink bg-journal text-paper">
+	<div class="page grid gap-12 py-14 md:grid-cols-[3fr_2fr] md:items-end md:py-20">
+		<div class="flex flex-col gap-6">
+			<p class="flex flex-wrap items-center gap-x-3 gap-y-1 font-heading text-sm font-bold tracking-widest text-paper/75 uppercase">
+				<span>Diamond open access</span>
+				{config.issn && <span aria-hidden="true">·</span>}
+				{config.issn && <span>ISSN {config.issn}</span>}
+				{
+					config.indexedIn?.map((index) => (
+						<>
+							<span aria-hidden="true">·</span>
+							<a href={index.url} class="hover:text-paper">
+								Indexed in {index.name}
+							</a>
+						</>
+					))
+				}
+			</p>
+			<h1 class="font-heading text-5xl leading-[0.92] font-black tracking-tighter md:text-7xl xl:text-8xl">
+				{
+					lines.map((line, i) => (
+						<span class="block">
+							{line}
+							{i < lines.length - 1 && " "}
+						</span>
+					))
+				}
+			</h1>
+			<span class="block h-2 w-24 bg-accent" aria-hidden="true"></span>
+			<slot />
+		</div>
+
+		<aside class="flex flex-col border-frame border-paper/40 text-sm" aria-label="About the journal">
+			{
+				numbers.length > 0 && (
+					<dl class="grid grid-cols-3 border-b-frame border-paper/40">
+						{numbers.map((n, i) => (
+							<div class:list={["flex flex-col-reverse gap-1 p-4 md:p-5", i > 0 && "border-l-frame border-paper/40"]}>
+								<dt class="text-paper/75">{n.label}</dt>
+								<dd class="font-heading text-3xl leading-none font-black md:text-4xl">{n.value}</dd>
+							</div>
+						))}
+					</dl>
+				)
+			}
+			<dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-3 p-4 md:p-5">
+				{
+					chief && (
+						<>
+							<dt class="text-paper/75">Editor-in-chief</dt>
+							<dd>
+								<a href={`/people/${chief.slug}`} class={link}>
+									{chief.name}
+								</a>
+							</dd>
+						</>
+					)
+				}
+				<dt class="text-paper/75">Publisher</dt>
+				<dd>
+					<a href="/" class={link}>
+						{site.name}
+					</a>
+				</dd>
+				{
+					config.issn && (
+						<>
+							<dt class="text-paper/75">ISSN</dt>
+							<dd>{config.issn} (online)</dd>
+						</>
+					)
+				}
+				{
+					config.indexedIn?.length && (
+						<>
+							<dt class="text-paper/75">Indexed in</dt>
+							<dd class="flex flex-wrap gap-x-3">
+								{config.indexedIn.map((index) => (
+									<a href={index.url} class:list={[link, "inline-flex items-center gap-1"]}>
+										{index.name}
+										{index.since && <span class="text-paper/75">since {index.since}</span>}
+										<Icon name="lucide:arrow-up-right" class="size-3.5" aria-hidden="true" />
+									</a>
+								))}
+							</dd>
+						</>
+					)
+				}
+				{
+					license && (
+						<>
+							<dt class="text-paper/75">Licence</dt>
+							<dd>
+								<a href={license.url} class={link}>
+									{license.name}
+								</a>
+							</dd>
+						</>
+					)
+				}
+				<dt class="text-paper/75">Fees</dt>
+				<dd>None, to read or to publish</dd>
+			</dl>
+		</aside>
+	</div>
+</section>

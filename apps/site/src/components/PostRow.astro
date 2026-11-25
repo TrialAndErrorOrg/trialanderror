@@ -1,0 +1,43 @@
+---
+import { formatDate, listNames } from "~/lib/format";
+import type { Post } from "~/lib/types";
+import Picture from "./Picture.astro";
+
+/*
+ * A post as one line of a list beside the featured post: a small picture,
+ * category, title, authors and date.
+ */
+
+interface Props {
+	post: Post;
+	/** A big number in place of the picture, for "Most read" */
+	rank?: number;
+}
+
+const { post, rank } = Astro.props;
+---
+
+<article class="group relative flex gap-4 border-b border-ink/20 py-5 first:pt-0 last:border-b-0 last:pb-0">
+	{
+		rank ? (
+			<span class="w-12 shrink-0 font-heading text-5xl leading-none font-black text-accent [-webkit-text-stroke:2px_var(--color-ink)]" aria-hidden="true">
+				{rank}
+			</span>
+		) : (
+			<div class="aspect-[4/3] w-28 shrink-0 overflow-hidden border-frame border-ink md:w-36">
+				<Picture image={post.image} width={300} class="size-full object-cover transition-transform duration-300 group-hover:scale-105" />
+			</div>
+		)
+	}
+	<div class="flex min-w-0 flex-col gap-1">
+		{post.category && <p class="font-heading text-sm font-bold text-muted">{post.category.title}</p>}
+		<h3 class="font-heading text-lg leading-tight font-bold tracking-tight md:text-xl">
+			<a href={`/blog/${post.slug}`} class="decoration-accent decoration-2 underline-offset-4 group-hover:underline after:absolute after:inset-0">{post.title}</a>
+		</h3>
+		<p class="text-sm text-muted">
+			{post.authors.length > 0 && <span class="font-semibold text-ink">{listNames(post.authors.map((a) => a.name))}</span>}
+			{post.authors.length > 0 && <span aria-hidden="true"> · </span>}
+			<time datetime={post.date}>{formatDate(post.date)}</time>
+		</p>
+	</div>
+</article>

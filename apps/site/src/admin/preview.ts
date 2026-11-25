@@ -118,9 +118,9 @@ const session = () => JSON.parse(localStorage.getItem("sveltia-cms.user") ?? "nu
  * as the editor has it goes to /admin/preview (src/pages/admin/preview.astro),
  * which answers with the page as it will look, shown in a frame.
  */
-function PagePreview({ entry }: PreviewProps) {
+function PagePreview({ entry, collection }: PreviewProps & { collection: string }) {
 	const [html, setHtml] = React.useState("<p style='font-family: sans-serif'>Loading the preview…</p>");
-	const body = JSON.stringify({ slug: entry.get("slug"), data: entry.get("data")?.toJS?.() ?? {} });
+	const body = JSON.stringify({ slug: entry.get("slug"), collection, data: entry.get("data")?.toJS?.() ?? {} });
 
 	React.useEffect(() => {
 		const controller = new AbortController();
@@ -147,4 +147,7 @@ function PagePreview({ entry }: PreviewProps) {
 	return h("iframe", { srcDoc: html, title: "Preview", style: { width: "100%", height: "100vh", border: 0, display: "block" } });
 }
 
-CMS.registerPreviewTemplate("pages", PagePreview);
+// Journal pages are drawn under the journal's menu
+for (const collection of ["pages", "journal-pages"]) {
+	CMS.registerPreviewTemplate(collection, (props: PreviewProps) => h(PagePreview, { ...props, collection }));
+}

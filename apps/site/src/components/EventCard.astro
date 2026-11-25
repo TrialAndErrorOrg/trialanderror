@@ -1,0 +1,51 @@
+---
+import { Icon } from "astro-icon/components";
+import { dateParts, endOf, formatWhen, type SiteEvent } from "~/lib/sources/events";
+import Picture from "./Picture.astro";
+
+/*
+ * An event in a list: a date block, then title, when and where. Upcoming
+ * events carry their end time, so a script can hide them once they're over
+ * even if the site hasn't been rebuilt since.
+ */
+
+interface Props {
+	event: SiteEvent;
+	upcoming?: boolean;
+}
+
+const { event, upcoming = false } = Astro.props;
+const { day, month, year } = dateParts(event.start);
+---
+
+<article class="card group md:flex-row" data-event-ends={upcoming ? endOf(event).toISOString() : undefined}>
+	<div class="flex shrink-0 items-center gap-4 border-b-frame border-ink bg-accent px-5 py-4 md:w-36 md:flex-col md:justify-center md:gap-0 md:border-r-frame md:border-b-0">
+		<span class="font-heading text-5xl leading-none font-black">{day}</span>
+		<span class="font-heading text-xl font-bold uppercase">{month}</span>
+		<span class="text-sm font-semibold">{year}</span>
+	</div>
+	<div class="flex flex-grow flex-col gap-2 p-5 md:p-6">
+		{event.kind && <p class="font-heading text-sm font-bold text-muted uppercase">{event.kind}</p>}
+		<h3 class="font-heading text-2xl leading-tight font-black tracking-tight">
+			<a href={event.url} class="card-link">{event.title}</a>
+		</h3>
+		<p class="flex items-start gap-2 text-sm font-semibold"><Icon name="lucide:calendar" class="mt-0.5 size-4 shrink-0" aria-hidden="true" />{formatWhen(event)}</p>
+		{
+			(event.location || event.online) && (
+				<p class="flex items-start gap-2 text-sm">
+					<Icon name={event.location ? "lucide:map-pin" : "lucide:video"} class="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+					{event.location ?? "Online"}
+					{event.location && event.online && " and online"}
+				</p>
+			)
+		}
+		{event.summary && <p class="line-clamp-3 text-ink/80">{event.summary}</p>}
+	</div>
+	{
+		event.image && (
+			<div class="hidden w-56 shrink-0 overflow-hidden border-l-frame border-ink lg:block">
+				<Picture image={event.image} width={450} class="size-full object-cover" />
+			</div>
+		)
+	}
+</article>

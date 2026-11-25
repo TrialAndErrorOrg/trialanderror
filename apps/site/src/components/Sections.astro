@@ -1,12 +1,22 @@
 ---
 import type { Section } from "~/content.config";
+import ArticleTypes from "./sections/ArticleTypes.astro";
 import Buttons from "./sections/Buttons.astro";
+import CardsSection from "./sections/CardsSection.astro";
+import Chooser from "./sections/Chooser.astro";
+import Contents from "./sections/Contents.astro";
+import EditorialBoard from "./sections/EditorialBoard.astro";
+import Events from "./sections/Events.astro";
 import Features from "./sections/Features.astro";
 import Hero from "./sections/Hero.astro";
 import Issues from "./sections/Issues.astro";
+import Donate from "./sections/Donate.astro";
+import FeaturedIssue from "./sections/FeaturedIssue.astro";
+import Supporters from "./sections/Supporters.astro";
 import LatestArticles from "./sections/LatestArticles.astro";
 import LatestPosts from "./sections/LatestPosts.astro";
 import Newsletter from "./sections/Newsletter.astro";
+import StepsSection from "./sections/StepsSection.astro";
 import Team from "./sections/Team.astro";
 import Text from "./sections/Text.astro";
 
@@ -22,18 +32,36 @@ const components = {
 	features: Features,
 	"latest-posts": LatestPosts,
 	"latest-articles": LatestArticles,
+	"featured-issue": FeaturedIssue,
+	donate: Donate,
+	supporters: Supporters,
+	"article-types": ArticleTypes,
 	issues: Issues,
 	team: Team,
+	"editorial-board": EditorialBoard,
+	events: Events,
 	newsletter: Newsletter,
 	buttons: Buttons,
+	contents: Contents,
+	chooser: Chooser,
+	cards: CardsSection,
+	steps: StepsSection,
 } satisfies Record<Section["type"], unknown>;
 
 const { sections } = Astro.props;
+
+// "On this page" lists the sections after it that have an anchor and a title
+const linksAfter = (index: number) =>
+	sections.slice(index + 1).flatMap((s) => {
+		if (!("id" in s) || !s.id || !("title" in s) || !s.title) return [];
+		const label = ("short" in s && s.short) || s.title;
+		return [{ id: s.id, label }];
+	});
 ---
 
 {
-	sections.map((section) => {
+	sections.map((section, i) => {
 		const Component = components[section.type] as any;
-		return <Component {...section} />;
+		return section.type === "contents" ? <Contents title={section.title} links={linksAfter(i)} /> : <Component {...section} />;
 	})
 }

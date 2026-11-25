@@ -2,7 +2,7 @@ import { getImage, inferRemoteSize } from "astro:assets";
 import { stripHtml } from "./format";
 import type { Heading } from "./html";
 import { decodeEntities, type Journal, journal, replaceElements, type Release, type Rich } from "./sources/journal";
-import type { UnderlayFile } from "./sources/underlay";
+import { assetHash, assetRef, type UnderlayFile } from "./sources/underlay";
 import type { Article } from "./types";
 
 /*
@@ -25,9 +25,19 @@ export interface Connection {
 	article?: Article;
 }
 
+/** A section about the article rather than part of its argument, shown beside the text */
+export interface ArticleNote {
+	/** "Take-home message", "Purpose" or "Original purpose" */
+	title: string;
+	html: string;
+	words: number;
+}
+
 export interface ArticleDetails {
 	body: string;
 	headings: Heading[];
+	/** The take-home message and (original) purpose, taken out of the body */
+	notes: ArticleNote[];
 	/** The export has no text, so the PDF is the article */
 	empty: boolean;
 	keywords: string[];
@@ -58,12 +68,13 @@ const IMAGE_WIDTH = 1600;
 
 export async function getArticleDetails(article: Article, source: Journal = journal()): Promise<ArticleDetails> {
 	const [release, html] = await Promise.all([source.getRelease(article), source.getArticleHtml(article)]);
-	const assets = new Map((release?.assets ?? []).map((file) => [hash(file.$file), file]));
-	const { body, headings, text } = await prepareArticle(html ?? "", assets, source);
+	const assets = new Map((release?.assets ?? []).map((file) => [assetHash(file), file]));
+	const { body, headings, text, notes } = await prepareArticle(html ?? "", assets, source, true);
 
 	return {
 		body,
 		headings,
+		notes,
 		empty: text.length < 200,
 		keywords: keywords(html ?? ""),
 		downloads: downloads(release, source.downloadUrl),
@@ -74,7 +85,7 @@ export async function getArticleDetails(article: Article, source: Journal = jour
 
 /** A PubPub page or issue intro, fitted into the site like an article's text */
 export async function getRichBody(rich: Rich, source: Journal = journal()) {
-	const assets = new Map(rich.assets.map((file) => [hash(file.$file), file]));
+	const assets = new Map(rich.assets.map((file) => [assetHash(file), file]));
 	const { body, headings } = await prepareArticle(rich.html, assets, source);
 	return { body, headings };
 }
@@ -89,12 +100,16 @@ function downloads(release: Release | undefined, downloadUrl: FileUrl): Download
 	return [{ format: "pdf", label: "PDF", url: downloadUrl(release.formatted) }, ...files.filter((file) => file.format !== "pdf")];
 }
 
+/** Where an article's PDF is served on this site, the typeset one when there is one */
+export async function articlePdfUrl(article: Article, source: Journal = journal()) {
+	const release = await source.getRelease(article);
+	return downloads(release, source.downloadUrl).find((d) => d.format === "pdf")?.url;
+}
+
 /** Warm the download cache for every article at once, instead of one page at a time */
 export const prefetchArticles = async (articles: Article[], source: Journal = journal()) => {
 	await Promise.all(articles.map((article) => source.getArticleHtml(article).catch(() => undefined)));
 };
-
-const hash = (ref: string) => ref.replace(/^sha256:/, "");
 
 /** Where a journal's files can be downloaded */
 type FileUrl = (file: UnderlayFile) => string;
@@ -132,7 +147,7 @@ function keywords(html: string) {
  * itself, move headings one level down under the page's h1, serve images
  * from this site and point attachments at their Underlay file.
  */
-async function prepareArticle(html: string, assets: Map<string, UnderlayFile>, source: Journal) {
+async function prepareArticle(html: string, assets: Map<string, UnderlayFile>, source: Journal, withNotes = false) {
 	let body = html
 		.replace(/^\s*<article>|<\/article>\s*$/g, "")
 		.replace(/<footer class="pub-footer">[\s\S]*?<\/footer>/, "")
@@ -143,7 +158,7 @@ async function prepareArticle(html: string, assets: Map<string, UnderlayFile>, s
 		.replace(/\s(?:data-(?!node-type|align|size)[\w-]+|date-structured-value|style|class="MsoNormal")(?:="[^"]*")?/g, "")
 		.replace(/<(\/?)h([1-6])\b/g, (_, slash: string, level: string) => `<${slash}h${Math.min(Number(level) + 1, 6)}`)
 		.replace(/<iframe\b/g, '<iframe loading="lazy" title="Embedded figure"')
-		.replace(/href="sha256:([0-9a-f]{64})"/g, (_, h: string) => `href="${source.downloadUrl(assets.get(h) ?? { $file: h })}"`);
+		.replace(/href="sha256:([0-9a-f]{64})"/g, (_, h: string) => `href="${source.downloadUrl(assets.get(h) ?? assetRef(h))}"`);
 
 	// An empty "References" heading in the text duplicates the one PubPub adds to the notes
 	if (/<div class="pub-notes">[\s\S]*<h2>References<\/h2>/.test(body)) {
@@ -159,6 +174,21 @@ async function prepareArticle(html: string, assets: Map<string, UnderlayFile>, s
 
 	body = await replaceImages(body, assets, source.journalFileUrl);
 	body = await replaceDeadEmbeds(body);
+
+	const notes: ArticleNote[] = [];
+	if (withNotes) {
+		body = body.replace(/<h2[^>]*>([\s\S]*?)<\/h2>([\s\S]*?)(?=<h2[\s>]|<div class="pub-notes"|$)/g, (section, title: string, content: string) => {
+			const text = decodeEntities(stripHtml(title)).replace(/[\s:.]+$/, "").trim();
+			if (!NOTE_TITLE.test(text)) return section;
+			const label = text.toLowerCase().replace(/^take[- ]home/, "take-home");
+			notes.push({
+				title: label[0].toUpperCase() + label.slice(1),
+				html: content.trim(),
+				words: stripHtml(content).split(/\s+/).filter(Boolean).length,
+			});
+			return "";
+		});
+	}
 
 	const ids = new Set([...body.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
 	const headings: Heading[] = [];
@@ -178,8 +208,11 @@ async function prepareArticle(html: string, assets: Map<string, UnderlayFile>, s
 
 	const main = body.replace(/<div class="pub-notes">[\s\S]*$|<h2[^>]*>\s*References\s*<\/h2>[\s\S]*$/, "");
 	const text = stripHtml(replaceElements(main, /<span class="katex-html"/, () => ""));
-	return { body, headings, text };
+	return { body, headings, text, notes };
 }
+
+/** Headings of the sections that become notes beside an article: its take-home message and purpose */
+const NOTE_TITLE = /^(?:take[- ]home message|(?:original )?purpose)$/i;
 
 /** Embedded pages that no longer load, such as the old interactive plots on assets.pubpub.org, become a short note */
 async function replaceDeadEmbeds(body: string) {
@@ -201,7 +234,7 @@ async function replaceImages(body: string, assets: Map<string, UnderlayFile>, jo
 	const sources = new Map<string, string>();
 	await Promise.all(
 		[...new Set([...body.matchAll(/<img\s[^>]*?src="sha256:([0-9a-f]{64})"/g)].map((m) => m[1]))].map(async (h) => {
-			sources.set(h, await optimise(assets.get(h) ?? { $file: h }, journalFileUrl));
+			sources.set(h, await optimise(assets.get(h) ?? assetRef(h), journalFileUrl));
 		}),
 	);
 	return body.replace(/<img(\s[^>]*?)src="sha256:([0-9a-f]{64})"([^>]*?)\/?>/g, (_, before: string, h: string, after: string) => {

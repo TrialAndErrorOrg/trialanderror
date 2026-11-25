@@ -1,0 +1,13 @@
+<script>
+	// Hide upcoming events that have ended since the site was built, and show the
+	// "nothing planned" note if none are left
+	const now = Date.now();
+	for (const card of document.querySelectorAll<HTMLElement>("[data-event-ends]")) {
+		if (Date.parse(card.dataset.eventEnds!) < now) card.closest("li")?.setAttribute("hidden", "");
+	}
+	for (const list of document.querySelectorAll<HTMLElement>("[data-upcoming]")) {
+		if (list.querySelector("li:not([hidden])")) continue;
+		list.setAttribute("hidden", "");
+		list.parentElement?.querySelector("[data-none]")?.removeAttribute("hidden");
+	}
+</script>

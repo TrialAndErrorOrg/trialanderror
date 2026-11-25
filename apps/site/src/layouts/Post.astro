@@ -8,6 +8,7 @@ import { formatDate, readingMinutes } from "~/lib/format";
 import { prepareBody } from "~/lib/html";
 import { personHref } from "~/lib/people";
 import { site } from "~/lib/settings";
+import { getSubstackDiscussion } from "~/lib/sources/substack";
 import type { Post } from "~/lib/types";
 import Base from "./Base.astro";
 
@@ -30,20 +31,29 @@ const share = [
 	{ icon: "email", label: "Share by email", href: `mailto:?subject=${encodeURIComponent(post.title)}&body=${encodeURIComponent(url)}` },
 ];
 
+// Readers comment on the post's copy on Substack
+const discussion = post.substack && !draft ? await getSubstackDiscussion(post.substack) : undefined;
+
 // Drafts render on request, so link to the author's own slug rather than look everyone up
 const authorLinks = await Promise.all(post.authors.map((author) => personHref(author, Astro.isPrerendered)));
 
-// Scholarly metadata, read by Google Scholar and Zotero
+// Scholarly metadata, read by Google Scholar and Zotero. Only posts with a DOI
+// get the citation_* tags, so Scholar doesn't take every post for a paper
 const names = post.authors.map((a) => a.name);
+const citation = post.doi
+	? {
+			citation_title: post.title,
+			citation_author: names,
+			citation_publication_date: post.date.slice(0, 10).replaceAll("-", "/"),
+			citation_journal_title: site.blog.title,
+			citation_publisher: site.name,
+			citation_fulltext_html_url: url,
+			citation_doi: post.doi,
+			citation_keywords: post.tags.map((t) => t.title),
+		}
+	: {};
 const meta = {
-	citation_title: post.title,
-	citation_author: names,
-	citation_publication_date: post.date.slice(0, 10).replaceAll("-", "/"),
-	citation_journal_title: site.blog.title,
-	citation_publisher: site.name,
-	citation_fulltext_html_url: url,
-	citation_doi: post.doi,
-	citation_keywords: post.tags.map((t) => t.title),
+	...citation,
 	"dc.title": post.title,
 	"dc.creator": names,
 	"dc.date": post.date,
@@ -164,6 +174,29 @@ const meta = {
 								<PersonCard person={person} />
 							))}
 						</div>
+					</section>
+				)
+			}
+			{
+				discussion && (
+					<section id="discussion" class="flex flex-col gap-5 border-frame border-ink bg-subtle p-6 shadow-hard md:p-8">
+						<div class="flex flex-wrap items-baseline justify-between gap-3">
+							<h2 class="font-heading text-3xl font-black">Discussion</h2>
+							{discussion.count > 0 && (
+								<span class="font-semibold">
+									{discussion.count} {discussion.count === 1 ? "comment" : "comments"} on Substack
+								</span>
+							)}
+						</div>
+						<p>
+							{discussion.count > 0
+								? "Readers are discussing this post on our Substack. Questions, objections and your own stories of trial and error are welcome there."
+								: "This post is also on our Substack. Questions, objections and your own stories of trial and error are welcome there."}
+						</p>
+						<a href={discussion.url} class="button self-start">
+							{discussion.count > 0 ? "Read and join the discussion" : "Start the discussion"} on Substack
+							<Icon name="lucide:arrow-up-right" class="size-5" aria-hidden="true" />
+						</a>
 					</section>
 				)
 			}

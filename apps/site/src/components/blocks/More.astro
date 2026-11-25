@@ -1,0 +1,25 @@
+---
+import { Icon } from "astro-icon/components";
+import Markdown from "../Markdown.astro";
+
+interface Props {
+	label: string;
+	body: string;
+	small?: boolean;
+}
+
+const { label, body, small = false } = Astro.props;
+---
+
+<details class="group/more">
+	<summary
+		class:list={[
+			"inline-flex cursor-pointer list-none items-center gap-2 border-frame border-ink bg-paper font-bold shadow-hard-sm transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-hard [&::-webkit-details-marker]:hidden",
+			small ? "px-3 py-1 text-sm" : "px-4 py-2",
+		]}
+	>
+		{label}
+		<Icon name="lucide:chevron-down" class="size-4 transition-transform group-open/more:rotate-180" aria-hidden="true" />
+	</summary>
+	<Markdown text={body} class:list={["card-text mt-4", !small && "max-w-3xl bg-journal-soft p-6"]} />
+</details>

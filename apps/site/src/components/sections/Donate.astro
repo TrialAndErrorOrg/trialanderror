@@ -1,0 +1,45 @@
+---
+import type { Section } from "~/content.config";
+import Markdown from "../Markdown.astro";
+
+/*
+ * How to give: Stripe's buy button, which opens Stripe's own checkout, and
+ * the bank details for a transfer.
+ */
+
+type Props = Extract<Section, { type: "donate" }>;
+const { id, title, text, stripe, bank } = Astro.props;
+---
+
+<section id={id} class="page scroll-mt-24 py-12">
+	<div class="grid gap-8 border-heavy border-ink bg-accent p-6 shadow-hard-lg md:grid-cols-[3fr_2fr] md:items-center md:p-10">
+		<div class="flex flex-col gap-4">
+			{title && <h2 class="font-heading text-4xl leading-none font-black tracking-tighter md:text-5xl">{title}</h2>}
+			{text && <Markdown text={text} class="prose-site text-lg" />}
+			{
+				bank && (
+					<dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 border-t-frame border-ink pt-4 text-base">
+						<dt class="font-heading font-bold">Account</dt>
+						<dd>{bank.name}</dd>
+						<dt class="font-heading font-bold">IBAN</dt>
+						<dd class="font-mono">{bank.iban}</dd>
+						{bank.bic && (
+							<>
+								<dt class="font-heading font-bold">BIC</dt>
+								<dd class="font-mono">{bank.bic}</dd>
+							</>
+						)}
+					</dl>
+				)
+			}
+		</div>
+		{
+			stripe && (
+				<div class="flex min-h-40 items-center justify-center border-frame border-ink bg-paper p-4">
+					<script is:inline async src="https://js.stripe.com/v3/buy-button.js" />
+					<stripe-buy-button buy-button-id={stripe.buttonId} publishable-key={stripe.publishableKey} />
+				</div>
+			)
+		}
+	</div>
+</section>

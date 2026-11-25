@@ -1,12 +1,12 @@
 ---
 import type { GetStaticPaths } from "astro";
 import BlogList from "~/layouts/BlogList.astro";
-import { getTerms } from "~/lib/sources/blog";
+import { getCategories } from "~/lib/sources/blog";
 
 export const getStaticPaths = (async () =>
-	(await getTerms("category")).map((term) => ({ params: { slug: term.slug }, props: { term } }))) satisfies GetStaticPaths;
+	(await getCategories()).map((term) => ({ params: { slug: term.slug }, props: { term } }))) satisfies GetStaticPaths;
 
 const { term } = Astro.props;
 ---
 
-<BlogList title={term.title} kicker="Category" posts={term.posts} />
+<BlogList title={term.title} kicker="Category" description={term.description} posts={term.posts} current={term.slug} />

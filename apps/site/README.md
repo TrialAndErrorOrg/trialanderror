@@ -17,19 +17,22 @@ can also search OJS with their own OJS API key.
 | What | Where it lives | How to change it |
 | --- | --- | --- |
 | Homepage, About and other section-built pages | site-content: `pages/*.yaml` | `/admin`, or edit the file |
+| The journal's own section-built pages (For Authors) | site-content: `pages/journal/*.yaml` | `/admin` → Journal pages |
 | Menus, footer, social links | site-content: `settings/navigation.yaml` | `/admin` → Settings → Menus |
 | Site name, newsletter, analytics | site-content: `settings/site.yaml` | `/admin` → Settings → Site |
 | Images and files uploaded in `/admin` | site-content: `uploads/` | `/admin` |
 | Colours, fonts, borders, shadows | `src/styles/theme.css` | edit the file |
 | Blog posts, categories, tags | site-content: `blog/*.md`, `categories/` | `/admin` → Blog |
 | Team members and blog authors | site-content: `people/*.yaml` | `/admin` → People |
-| Free-text pages (donate, events, award calls) | Strapi → Pages | Strapi |
+| Other pages (About, Donate, Legal status, Privacy) | site-content: `pages/*.yaml` | `/admin` → Pages |
+| Events | site-content: `events/*.md` | `/admin` → Events |
+| Supporters (funders, partners, donors) | site-content: `supporters/*.yaml` | `/admin` → Supporters |
 | Journal articles | Underlay ([centeroftrialanderror/jote](https://www.underlay.org/centeroftrialanderror/jote)), exported from PubPub | PubPub |
 
 site-content is its own repository,
 [TrialAndErrorOrg/site-content](https://github.com/TrialAndErrorOrg/site-content), so
-saving in `/admin` doesn't add commits to this one. A page in site-content wins
-over a Strapi page with the same slug.
+saving in `/admin` doesn't add commits to this one. No page comes from Strapi
+any more (moved 2026-11-25).
 
 ## Docs
 
@@ -53,7 +56,7 @@ src/
   styles/global.css  shared component classes (.card, .button, .label, .prose-site...)
   components/        Header, Footer, cards; sections/ holds one component per section type
   layouts/           Base (every page), Post (blog post), Page (CMS page), BlogList
-  lib/sources/       one module per content source: blog (site-content, or Strapi), journal (Underlay), pages
+  lib/sources/       one module per content source: blog (site-content, or Strapi), journal (Underlay), events
   lib/admin.ts       /admin's sign-in (sveltia-gateway), pages/admin/ its routes
   admin/convert/     the converter (apps/converter) with the site's sign-in, pages/admin/ojs/ its OJS proxy
   pages/             routes
@@ -63,7 +66,7 @@ Dockerfile           packages the built site, see docs/deploying.md
 ```
 
 site-content holds `pages/` (section-built pages, `index.yaml` is the
-homepage), `blog/` (posts, Markdown), `people/`, `categories/`, `settings/`
+homepage, `journal/` the journal's own pages), `blog/` (posts, Markdown), `people/`, `categories/`, `settings/`
 (`site.yaml`, `navigation.yaml`) and `uploads/`.
 
 ## What's where
