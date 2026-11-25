@@ -2,7 +2,7 @@ import { getImage, inferRemoteSize } from "astro:assets";
 import { stripHtml } from "./format";
 import type { Heading } from "./html";
 import { decodeEntities, type Journal, journal, replaceElements, type Release, type Rich } from "./sources/journal";
-import type { UnderlayFile } from "./sources/underlay";
+import { assetHash, assetRef, type UnderlayFile } from "./sources/underlay";
 import type { Article } from "./types";
 
 /*
@@ -58,7 +58,7 @@ const IMAGE_WIDTH = 1600;
 
 export async function getArticleDetails(article: Article, source: Journal = journal()): Promise<ArticleDetails> {
 	const [release, html] = await Promise.all([source.getRelease(article), source.getArticleHtml(article)]);
-	const assets = new Map((release?.assets ?? []).map((file) => [hash(file.$file), file]));
+	const assets = new Map((release?.assets ?? []).map((file) => [assetHash(file), file]));
 	const { body, headings, text } = await prepareArticle(html ?? "", assets, source);
 
 	return {
@@ -74,7 +74,7 @@ export async function getArticleDetails(article: Article, source: Journal = jour
 
 /** A PubPub page or issue intro, fitted into the site like an article's text */
 export async function getRichBody(rich: Rich, source: Journal = journal()) {
-	const assets = new Map(rich.assets.map((file) => [hash(file.$file), file]));
+	const assets = new Map(rich.assets.map((file) => [assetHash(file), file]));
 	const { body, headings } = await prepareArticle(rich.html, assets, source);
 	return { body, headings };
 }
@@ -93,8 +93,6 @@ function downloads(release: Release | undefined, downloadUrl: FileUrl): Download
 export const prefetchArticles = async (articles: Article[], source: Journal = journal()) => {
 	await Promise.all(articles.map((article) => source.getArticleHtml(article).catch(() => undefined)));
 };
-
-const hash = (ref: string) => ref.replace(/^sha256:/, "");
 
 /** Where a journal's files can be downloaded */
 type FileUrl = (file: UnderlayFile) => string;
@@ -143,7 +141,7 @@ async function prepareArticle(html: string, assets: Map<string, UnderlayFile>, s
 		.replace(/\s(?:data-(?!node-type|align|size)[\w-]+|date-structured-value|style|class="MsoNormal")(?:="[^"]*")?/g, "")
 		.replace(/<(\/?)h([1-6])\b/g, (_, slash: string, level: string) => `<${slash}h${Math.min(Number(level) + 1, 6)}`)
 		.replace(/<iframe\b/g, '<iframe loading="lazy" title="Embedded figure"')
-		.replace(/href="sha256:([0-9a-f]{64})"/g, (_, h: string) => `href="${source.downloadUrl(assets.get(h) ?? { $file: h })}"`);
+		.replace(/href="sha256:([0-9a-f]{64})"/g, (_, h: string) => `href="${source.downloadUrl(assets.get(h) ?? assetRef(h))}"`);
 
 	// An empty "References" heading in the text duplicates the one PubPub adds to the notes
 	if (/<div class="pub-notes">[\s\S]*<h2>References<\/h2>/.test(body)) {
@@ -201,7 +199,7 @@ async function replaceImages(body: string, assets: Map<string, UnderlayFile>, jo
 	const sources = new Map<string, string>();
 	await Promise.all(
 		[...new Set([...body.matchAll(/<img\s[^>]*?src="sha256:([0-9a-f]{64})"/g)].map((m) => m[1]))].map(async (h) => {
-			sources.set(h, await optimise(assets.get(h) ?? { $file: h }, journalFileUrl));
+			sources.set(h, await optimise(assets.get(h) ?? assetRef(h), journalFileUrl));
 		}),
 	);
 	return body.replace(/<img(\s[^>]*?)src="sha256:([0-9a-f]{64})"([^>]*?)\/?>/g, (_, before: string, h: string, after: string) => {

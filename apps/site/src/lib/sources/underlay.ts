@@ -8,8 +8,13 @@ export interface UnderlayRecord<T = any> {
 	data: T;
 }
 
+/**
+ * A file a record points to. Underlay used to write `$file: "sha256:<hex>"`
+ * and now writes `$asset: "ul:asset:<hex>"`, so both are read.
+ */
 export interface UnderlayFile {
-	$file: string;
+	$asset?: string;
+	$file?: string;
 	fileName?: string;
 	mimeType?: string;
 	originalUrl?: string;
@@ -55,14 +60,20 @@ export async function getCollection(owner: string, slug: string, version = "late
 	return byType;
 }
 
+/** A file's content hash, the same in records and in the `sha256:<hex>` references in HTML */
+export const assetHash = (file: UnderlayFile) => (file.$asset ?? file.$file ?? "").replace(/^(?:ul:asset:|sha256:)/, "");
+
+/** A reference to a file by its hash alone, as HTML gives it */
+export const assetRef = (hash: string): UnderlayFile => ({ $asset: `ul:asset:${hash}` });
+
 /** The durable API locator of a file. It redirects to a short-lived download URL */
 export const fileUrl = (owner: string, slug: string, file: UnderlayFile) =>
-	new URL(`/api/collections/${owner}/${slug}/files/${file.$file.replace(/^sha256:/, "")}`, UNDERLAY_URL).href;
+	new URL(`/api/collections/${owner}/${slug}/assets/${assetHash(file)}`, UNDERLAY_URL).href;
 
 /** Download a file's contents, for build-time use */
 export async function fetchFile(owner: string, slug: string, file: UnderlayFile) {
 	const response = await underlayFetch(fileUrl(owner, slug, file));
-	if (!response.ok) throw new Error(`Underlay ${response.status} for file ${file.$file}`);
+	if (!response.ok) throw new Error(`Underlay ${response.status} for file ${assetHash(file)}`);
 	return response;
 }
 
@@ -81,7 +92,7 @@ const TYPES: Record<string, string> = {
  */
 export async function fileResponse(owner: string, slug: string, hash: string, name: string) {
 	if (!/^[0-9a-f]{64}$/.test(hash)) return new Response("Not found", { status: 404 });
-	const upstream = await underlayFetch(fileUrl(owner, slug, { $file: hash }));
+	const upstream = await underlayFetch(fileUrl(owner, slug, assetRef(hash)));
 	if (!upstream.ok || !upstream.body) return new Response("Not found", { status: upstream.status === 404 ? 404 : 502 });
 
 	const type = TYPES[name.split(".").pop() ?? ""] ?? upstream.headers.get("content-type") ?? "application/octet-stream";
@@ -102,7 +113,7 @@ const waiting: (() => void)[] = [];
 
 /** A text file's contents, downloaded at most 8 at a time and cached between builds */
 export async function fetchFileText(owner: string, slug: string, file: UnderlayFile) {
-	const cached = path.join(cacheDir, file.$file.replace(/^sha256:/, ""));
+	const cached = path.join(cacheDir, assetHash(file));
 	try {
 		return await readFile(cached, "utf8");
 	} catch {}
