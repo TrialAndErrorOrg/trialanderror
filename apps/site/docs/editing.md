@@ -17,6 +17,15 @@ like the table of contents and the author bios.
 Authors are picked from **People**. Someone new writes for the blog? Add them
 under People first (Team member off).
 
+**Featured** puts a post big at the top of the blog's front page (the newest
+featured one wins, otherwise the newest post). When the post is also on
+Substack, paste its address in **The post on Substack**: the post then ends
+with its Substack comments and a link to join the discussion there.
+
+The blog's front page lists the most read posts. They come from Umami when the
+build has `UMAMI_USERNAME` and `UMAMI_PASSWORD`, and otherwise from **Settings →
+Site → Blog → Most read**. Every post is in the archive at `/blog/page/1`.
+
 ### Images
 
 Upload photos as they are: they are turned into WebP of at most 2400 pixels
@@ -34,11 +43,21 @@ repository.
 Go to `/admin` and sign in. Pages are lists of **sections**, drawn top to
 bottom. You can add, remove, reorder and edit sections:
 
-- **Big intro**: the large title block, in orange or journal blue. Each line of the title gets its own box.
+- **Big intro**: the large title block, in orange (the Center), journal blue or
+  white on orange (the Blog). Each line of the title gets its own box. "Show the
+  journal's numbers" adds the number of articles and issues.
 - **Text**: a block of text, optionally with a title and a coloured background.
-- **Columns**: two or three boxes side by side (like "What do we do?").
+- **Columns**: two or three boxes side by side (like "What we do"). A column
+  with a colour gets a title bar in that colour and its link covers the box.
 - **Latest blog posts** / **Latest journal articles**: filled in automatically.
-  Journal articles show as cards or as a compact list.
+  Journal articles show as cards, as a compact list, or with the newest big
+  and the others beside it.
+- **Journal article types**: each type with its number of articles, and a line
+  about it if you give one.
+- **Events**: the next events, or the latest ones when nothing is planned.
+- **Editorial board**: everyone under People with a journal role, grouped by
+  role. Change someone's role (People → Journal editorial board) and the board
+  follows.
 - **Latest issues**: the newest numbered issues, as covers.
 - **Team**: everyone under People marked as team member who has a photo.
 - **Newsletter sign-up**
@@ -105,3 +124,21 @@ the page explains how to get: in OJS, your profile, the **API Key** tab. The key
 stays in your browser, and OJS records what you do with it under your name. The
 converter only reads from OJS. It needs `ADMIN_AUTH=microsoft`. With GitHub
 sign-in the page only converts uploaded files.
+
+## Events
+
+In `/admin`, **Events**, **New Event**: title, when it starts and ends, where
+(or a link to join online) and a link to sign up. They're listed at `/events`,
+upcoming first, and in a calendar people can subscribe to at `/events.ics`.
+Each event page has "Add to calendar" buttons while it's still to come. After
+the event, pick the blog post about how it went under **Blog post about how it
+went**.
+
+An event counts as upcoming until it ends. The list is made when the site is
+built, and the page hides events that have ended since.
+
+## Announcements
+
+**Settings → Site → Announcement** puts a line across the top of every page,
+with a link if you give one, until the date under **Hide after**. Empty the
+text to remove it.
