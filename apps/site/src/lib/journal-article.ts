@@ -25,9 +25,19 @@ export interface Connection {
 	article?: Article;
 }
 
+/** A section about the article rather than part of its argument, shown beside the text */
+export interface ArticleNote {
+	/** "Take-home message", "Purpose" or "Original purpose" */
+	title: string;
+	html: string;
+	words: number;
+}
+
 export interface ArticleDetails {
 	body: string;
 	headings: Heading[];
+	/** The take-home message and (original) purpose, taken out of the body */
+	notes: ArticleNote[];
 	/** The export has no text, so the PDF is the article */
 	empty: boolean;
 	keywords: string[];
@@ -59,11 +69,12 @@ const IMAGE_WIDTH = 1600;
 export async function getArticleDetails(article: Article, source: Journal = journal()): Promise<ArticleDetails> {
 	const [release, html] = await Promise.all([source.getRelease(article), source.getArticleHtml(article)]);
 	const assets = new Map((release?.assets ?? []).map((file) => [hash(file.$file), file]));
-	const { body, headings, text } = await prepareArticle(html ?? "", assets, source);
+	const { body, headings, text, notes } = await prepareArticle(html ?? "", assets, source, true);
 
 	return {
 		body,
 		headings,
+		notes,
 		empty: text.length < 200,
 		keywords: keywords(html ?? ""),
 		downloads: downloads(release, source.downloadUrl),
@@ -132,7 +143,7 @@ function keywords(html: string) {
  * itself, move headings one level down under the page's h1, serve images
  * from this site and point attachments at their Underlay file.
  */
-async function prepareArticle(html: string, assets: Map<string, UnderlayFile>, source: Journal) {
+async function prepareArticle(html: string, assets: Map<string, UnderlayFile>, source: Journal, withNotes = false) {
 	let body = html
 		.replace(/^\s*<article>|<\/article>\s*$/g, "")
 		.replace(/<footer class="pub-footer">[\s\S]*?<\/footer>/, "")
@@ -160,6 +171,21 @@ async function prepareArticle(html: string, assets: Map<string, UnderlayFile>, s
 	body = await replaceImages(body, assets, source.journalFileUrl);
 	body = await replaceDeadEmbeds(body);
 
+	const notes: ArticleNote[] = [];
+	if (withNotes) {
+		body = body.replace(/<h2[^>]*>([\s\S]*?)<\/h2>([\s\S]*?)(?=<h2[\s>]|<div class="pub-notes"|$)/g, (section, title: string, content: string) => {
+			const text = decodeEntities(stripHtml(title)).replace(/[\s:.]+$/, "").trim();
+			if (!NOTE_TITLE.test(text)) return section;
+			const label = text.toLowerCase().replace(/^take[- ]home/, "take-home");
+			notes.push({
+				title: label[0].toUpperCase() + label.slice(1),
+				html: content.trim(),
+				words: stripHtml(content).split(/\s+/).filter(Boolean).length,
+			});
+			return "";
+		});
+	}
+
 	const ids = new Set([...body.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
 	const headings: Heading[] = [];
 	body = body.replace(/<(h[23])([^>]*)>([\s\S]*?)<\/\1>/g, (_, tag: string, attrs: string, content: string) => {
@@ -178,8 +204,11 @@ async function prepareArticle(html: string, assets: Map<string, UnderlayFile>, s
 
 	const main = body.replace(/<div class="pub-notes">[\s\S]*$|<h2[^>]*>\s*References\s*<\/h2>[\s\S]*$/, "");
 	const text = stripHtml(replaceElements(main, /<span class="katex-html"/, () => ""));
-	return { body, headings, text };
+	return { body, headings, text, notes };
 }
+
+/** Headings of the sections that become notes beside an article: its take-home message and purpose */
+const NOTE_TITLE = /^(?:take[- ]home message|(?:original )?purpose)$/i;
 
 /** Embedded pages that no longer load, such as the old interactive plots on assets.pubpub.org, become a short note */
 async function replaceDeadEmbeds(body: string) {

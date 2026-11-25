@@ -1,0 +1,58 @@
+---
+import { Icon } from "astro-icon/components";
+import { stripHtml } from "~/lib/format";
+import type { ArticleNote } from "~/lib/journal-article";
+import { decodeEntities } from "~/lib/sources/journal";
+
+/*
+ * The take-home message and purpose of an empirical article: about the
+ * article rather than part of it, so they sit beside the text. A long note
+ * shows its first lines and opens on click.
+ */
+
+interface Props {
+	notes: ArticleNote[];
+	/** Leave out the ids in the notes' HTML, for a second copy on the same page */
+	copy?: boolean;
+	class?: string;
+}
+
+const { notes, copy = false, class: className } = Astro.props;
+
+/** Notes longer than this many words start closed */
+const OPEN_UP_TO = 70;
+const PREVIEW_WORDS = 28;
+
+const preview = (note: ArticleNote) => `${decodeEntities(stripHtml(note.html)).split(" ").slice(0, PREVIEW_WORDS).join(" ")}…`;
+const html = (note: ArticleNote) => (copy ? note.html.replace(/\sid="[^"]*"/g, "") : note.html);
+const text = "journal-body prose prose-sm max-w-none [--tw-prose-body:var(--color-ink)] prose-p:my-2 first:prose-p:mt-0 last:prose-p:mb-0";
+const title = "font-heading text-sm font-bold tracking-wide text-journal uppercase";
+---
+
+{
+	notes.length > 0 && (
+		<div class:list={["flex flex-col gap-4", className]} data-pagefind-ignore={copy ? "all" : undefined}>
+			{notes.map((note) =>
+				note.words > OPEN_UP_TO ? (
+					<details class="group border-frame border-ink bg-paper p-5 shadow-hard">
+						<summary class="flex cursor-pointer list-none flex-col gap-2 [&::-webkit-details-marker]:hidden">
+							<span class="flex items-center justify-between gap-3">
+								<h2 class={title}>{note.title}</h2>
+								<Icon name="lucide:chevron-down" class="size-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" />
+							</span>
+							<span class="text-sm group-open:hidden" aria-hidden="true">
+								{preview(note)} <span class="font-semibold underline decoration-accent decoration-2 underline-offset-4">Read more</span>
+							</span>
+						</summary>
+						<div class:list={[text, "mt-2"]} set:html={html(note)} />
+					</details>
+				) : (
+					<section class="flex flex-col gap-2 border-frame border-ink bg-journal-soft p-5">
+						<h2 class={title}>{note.title}</h2>
+						<div class={text} set:html={html(note)} />
+					</section>
+				),
+			)}
+		</div>
+	)
+}
