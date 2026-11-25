@@ -1,7 +1,8 @@
 ---
 import { Icon } from "astro-icon/components";
+import { sectionOf } from "~/lib/section";
 import { navigation } from "~/lib/settings";
-import Logo from "./Logo.astro";
+import Brand from "./Brand.astro";
 
 const path = Astro.url.pathname;
 const isCurrent = (url?: string) => !!url && url.startsWith("/") && url !== "/" && path.startsWith(url.split("#")[0]);
@@ -9,14 +10,9 @@ const isCurrent = (url?: string) => !!url && url.startsWith("/") && url !== "/" 
 
 <header class="sticky top-0 z-40 border-b-frame border-ink bg-paper">
 	<div class="flex h-16 items-stretch justify-between md:h-20">
-		<a href="/" class="group flex items-center gap-3 border-r-frame border-ink bg-ink pr-4 text-paper transition-colors hover:bg-accent hover:text-ink">
-			<span class="flex h-full w-16 items-center justify-center p-3 md:w-20 md:p-4">
-				<Logo class="size-full" />
-			</span>
-			<span class="font-heading text-lg leading-none font-black tracking-tighter md:max-lg:hidden lg:text-xl">
-				Center of<br />Trial & Error
-			</span>
-		</a>
+		<div class="flex items-center pl-4 md:pl-6">
+			<Brand section={sectionOf(path)} />
+		</div>
 
 		<nav aria-label="Main" class="flex items-stretch">
 			<!-- Desktop -->

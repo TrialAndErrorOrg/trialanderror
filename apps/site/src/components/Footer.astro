@@ -1,23 +1,23 @@
 ---
+import { BRANDS, sectionOf } from "~/lib/section";
 import { navigation, site } from "~/lib/settings";
-import Logo from "./Logo.astro";
+import Brand from "./Brand.astro";
 import SocialIcon from "./SocialIcon.astro";
+
+const section = sectionOf(Astro.url.pathname);
 ---
 
-<footer class="mt-24 border-t-heavy border-ink bg-ink text-paper">
+<footer class:list={["mt-24 border-t-heavy border-ink text-ink", BRANDS[section].soft]}>
 	<div class="page grid gap-12 py-16 md:grid-cols-[1fr_2fr]">
 		<div class="flex flex-col gap-6">
-			<a href="/" class="flex items-center gap-4">
-				<span class="size-16 border-frame border-paper p-2"><Logo class="size-full" /></span>
-				<span class="font-heading text-2xl leading-none font-black tracking-tighter">Center of<br />Trial & Error</span>
-			</a>
-			<p class="max-w-sm text-paper/80">{site.description}</p>
+			<Brand section={section} large class="self-start" />
+			<p class="max-w-sm">{site.description}</p>
 			<ul class="flex flex-wrap gap-4">
 				{
 					navigation.socials.map((social) => (
 						<li>
-							<a href={social.url} class="block hover:text-accent" aria-label={social.icon}>
-								<SocialIcon icon={social.icon} class="size-6" />
+							<a href={social.url} class="block border-frame border-ink bg-paper p-2 transition-all hover:-translate-y-0.5 hover:shadow-hard" aria-label={social.icon}>
+								<SocialIcon icon={social.icon} class="size-5" />
 							</a>
 						</li>
 					))
@@ -28,11 +28,11 @@ import SocialIcon from "./SocialIcon.astro";
 			{
 				navigation.footer.map((column) => (
 					<div>
-						<h2 class="mb-4 font-heading text-lg font-black text-accent">{column.title}</h2>
+						<h2 class="mb-4 font-heading text-lg font-black">{column.title}</h2>
 						<ul class="flex flex-col gap-2">
 							{column.children?.map((link) => (
 								<li>
-									<a href={link.url} class="hover:underline">
+									<a href={link.url} class="underline-offset-4 hover:underline">
 										{link.title}
 									</a>
 								</li>
@@ -43,8 +43,8 @@ import SocialIcon from "./SocialIcon.astro";
 			}
 		</div>
 	</div>
-	<div class="border-t border-paper/30">
-		<p class="page py-6 text-sm text-paper/70">
+	<div class="border-t-frame border-ink bg-paper">
+		<p class="page py-6 text-sm text-muted">
 			© {new Date().getFullYear()} Stichting Center of Trial and Error. Content is CC BY 4.0 unless noted otherwise.
 			<a href="https://github.com/TrialAndErrorOrg/trialanderror/tree/main/apps/site" class="underline">Source code</a>.
 		</p>
