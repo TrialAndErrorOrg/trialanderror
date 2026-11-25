@@ -1,0 +1,88 @@
+---
+import { Icon } from "astro-icon/components";
+import type { Section } from "~/content.config";
+import { formatDate, listNames, stripHtml } from "~/lib/format";
+import { decodeEntities, getIssues, journal } from "~/lib/sources/journal";
+import Markdown from "../Markdown.astro";
+import Picture from "../Picture.astro";
+
+/*
+ * One issue to point readers to, like a special issue: its cover and
+ * description, with its articles beside it. Without a slug, the newest
+ * numbered issue.
+ */
+
+type Props = Extract<Section, { type: "featured-issue" }>;
+const { id, title, issue: slug, text, count } = Astro.props;
+
+const issues = await getIssues();
+const issue = slug ? issues.find((i) => i.slug === slug) : issues.find((i) => !i.rolling);
+if (slug && !issue) console.warn(`[featured-issue] no issue "${slug}"`);
+const url = issue && journal().config.issueUrl(issue.slug);
+// The issue's description, or else the first real paragraph of its intro, which
+// on PubPub often opens with the issue's masthead (ISSN, DOI, editors)
+const paragraphs = [...(issue?.intro?.html ?? "").matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/g)].map((m) => decodeEntities(stripHtml(m[1])).trim());
+const description = issue?.description || paragraphs.find((p) => p.split(/\s+/).length >= 25 && !/ISSN|doi\.org|licen[sc]e|Creative Commons/i.test(p));
+const shown = issue?.articles.slice(0, count) ?? [];
+const more = (issue?.articles.length ?? 0) - shown.length;
+const numbering = issue && [issue.volume && `Volume ${issue.volume}`, issue.number && `Issue ${issue.number}`].filter(Boolean).join(", ");
+---
+
+{
+	issue && url && (
+		<section id={id} class="scroll-mt-24 border-y-frame border-ink bg-paper py-16">
+			<div class="page grid gap-12 lg:grid-cols-[2fr_3fr]">
+				<div class="flex flex-col gap-5">
+					<p class="font-heading text-sm font-black tracking-widest text-journal uppercase">{title ?? "Featured issue"}</p>
+					{issue.image && (
+						<a href={url} class="group block aspect-[4/3] overflow-hidden border-frame border-ink shadow-[8px_8px_0_var(--color-journal)]" tabindex="-1" aria-hidden="true">
+							<Picture image={issue.image} width={900} class="size-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" alt="" />
+						</a>
+					)}
+					<h2 class="font-heading text-3xl leading-[1.05] font-black tracking-tighter text-journal md:text-5xl">
+						<a href={url} class="decoration-journal decoration-4 underline-offset-8 hover:underline">
+							{issue.title}
+						</a>
+					</h2>
+					<p class="text-sm text-muted">
+						{numbering && <span>{numbering} · </span>}
+						<time datetime={issue.date}>{formatDate(issue.date)}</time> · {issue.articles.length} {issue.articles.length === 1 ? "article" : "articles"}
+					</p>
+					{text ? <Markdown text={text} class="prose-site text-lg" /> : description && <p class="line-clamp-6 text-lg">{description}</p>}
+					<a href={url} class="button button-journal self-start">
+						Read the issue <Icon name="lucide:arrow-right" class="size-5" aria-hidden="true" />
+					</a>
+				</div>
+				<ol class="flex flex-col self-start border-frame border-ink">
+					{
+						shown.map((article, i) => (
+							<li class="group relative flex gap-4 border-b border-ink/20 p-5 last:border-b-0">
+								<span class="w-8 shrink-0 font-heading text-2xl leading-none font-black text-journal/40" aria-hidden="true">
+									{String(i + 1).padStart(2, "0")}
+								</span>
+								<div class="flex min-w-0 flex-col gap-1">
+									<p class="font-heading text-sm font-bold text-journal">{article.kind ?? "Article"}</p>
+									<h3 class="font-heading text-lg leading-tight font-bold tracking-tight md:text-xl">
+										<a href={article.url} class="decoration-journal decoration-2 underline-offset-4 group-hover:underline after:absolute after:inset-0">
+											{article.title}
+										</a>
+									</h3>
+									{article.authors.length > 0 && <p class="line-clamp-1 text-sm">{listNames(article.authors.map((a) => a.name))}</p>}
+								</div>
+							</li>
+						))
+					}
+					{
+						more > 0 && (
+							<li class="bg-journal-soft p-5">
+								<a href={url} class="font-heading font-bold text-journal underline-offset-4 hover:underline">
+									And {more} more in this issue →
+								</a>
+							</li>
+						)
+					}
+				</ol>
+			</div>
+		</section>
+	)
+}

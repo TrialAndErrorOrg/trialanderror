@@ -132,6 +132,16 @@ collections:
               - { name: title, label: Title, widget: string, default: From the Journal }
               - { name: count, label: How many, widget: number, value_type: int, default: 4, min: 1 }
               - { name: style, label: Look, widget: select, options: [{ label: The newest big with the others beside it, value: featured }, { label: Cards with the abstract, value: cards }, { label: Compact list, value: list }], default: cards }
+          - name: featured-issue
+            label: Featured journal issue
+            widget: object
+            summary: "{{title}} {{issue}}"
+            fields:
+              - { name: title, label: Small heading, widget: string, required: false, hint: 'Like "Special issue" or "New issue". Empty shows "Featured issue"' }
+              - { name: issue, label: Issue, widget: string, required: false, hint: "The last part of the issue's address, /journal/issue/<this>. Empty shows the newest numbered issue" }
+              - { name: text, label: Text, widget: markdown, required: false, hint: "Empty uses the issue's own description" }
+              - { name: count, label: How many articles, widget: number, value_type: int, default: 6, min: 1 }
+              - { name: id, label: "Anchor (link to it with #anchor)", widget: string, required: false }
           - name: article-types
             label: Journal article types
             widget: object

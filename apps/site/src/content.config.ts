@@ -150,6 +150,17 @@ const section = z.discriminatedUnion("type", [
 		style: z.enum(["featured", ...articleStyle.options]).default("cards"),
 	}),
 	z.object({
+		type: z.literal("featured-issue"),
+		id: z.string().optional(),
+		/** Small heading above the issue, like "Special issue" */
+		title: z.string().optional(),
+		/** The issue's slug, the last part of /journal/issue/<slug>. Empty: the newest numbered issue */
+		issue: z.string().optional(),
+		/** Instead of the issue's own description */
+		text: z.string().optional(),
+		count: z.number().int().positive().default(6),
+	}),
+	z.object({
 		type: z.literal("article-types"),
 		id: z.string().optional(),
 		title: z.string().default("Browse by type"),
