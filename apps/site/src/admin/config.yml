@@ -156,6 +156,14 @@ collections:
             fields:
               - { name: title, label: Title, widget: string, default: Issues }
               - { name: count, label: How many, widget: number, value_type: int, default: 3, min: 1 }
+          - name: events
+            label: Events (upcoming, or the latest when none are planned)
+            widget: object
+            summary: "{{title}}"
+            fields:
+              - { name: title, label: Title, widget: string, default: Events }
+              - { name: id, label: "Anchor (link to it with #anchor)", widget: string, required: false }
+              - { name: count, label: How many, widget: number, value_type: int, default: 3, min: 1 }
           - name: editorial-board
             label: Editorial board (everyone with a journal role in People)
             widget: object
@@ -171,6 +179,14 @@ collections:
             fields:
               - { name: title, label: Title, widget: string, default: Meet the Team }
               - { name: id, label: Anchor, widget: string, required: false }
+          - name: announcement
+            label: Announcement (a line across the top of every page)
+            widget: object
+            required: false
+            fields:
+              - { name: text, label: Text, widget: string }
+              - { name: url, label: Link, widget: string, required: false }
+              - { name: until, label: Hide after, widget: datetime, required: false, output_utc: true }
           - name: newsletter
             label: Newsletter sign-up
             widget: object
@@ -393,6 +409,35 @@ collections:
       - { name: description, label: Description for search engines (if not the excerpt), widget: text, required: false }
       - { name: featured, label: Featured (big at the top of the blog's front page), widget: boolean, default: false, required: false }
       - { name: substack, label: The post on Substack (its address), widget: string, required: false, hint: "Readers are sent there to comment, like https://centeroftrialanderror.substack.com/p/..." }
+
+  - name: events
+    label: Events
+    label_singular: Event
+    description: Symposia, talks and workshops, listed at /events and in the calendar feed.
+    folder: events
+    extension: md
+    format: frontmatter
+    create: true
+    slug: "{{year}}-{{slug}}"
+    summary: "{{start | date('YYYY-MM-DD')}} {{title}}"
+    sortable_fields: [start, title]
+    media_folder: /uploads/events
+    public_folder: /uploads/events
+    fields:
+      - { name: title, label: Title, widget: string }
+      - { name: kind, label: "Kind (symposium, talk, workshop...)", widget: string, required: false }
+      - { name: start, label: Starts, widget: datetime, output_utc: true }
+      - { name: end, label: Ends, widget: datetime, output_utc: true, required: false }
+      - { name: allDay, label: "All day (don't show times)", widget: boolean, default: false, required: false }
+      - { name: location, label: "Where (University Museum Utrecht)", widget: string, required: false }
+      - { name: address, label: Address, widget: string, required: false }
+      - { name: online, label: Link to join online, widget: string, required: false }
+      - { name: registration, label: Link to sign up, widget: string, required: false }
+      - { name: summary, label: One or two sentences about it, widget: text, required: false }
+      - { name: image, label: Image, widget: image, required: false }
+      - { name: imageAlt, label: Image description (for screen readers), widget: string, required: false }
+      - { name: body, label: Programme and details, widget: markdown, required: false }
+      - { name: report, label: Blog post about how it went, widget: relation, collection: blog, value_field: "{{slug}}", search_fields: [title], display_fields: [title], required: false }
 
   - name: people
     label: People

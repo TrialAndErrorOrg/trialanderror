@@ -1,5 +1,6 @@
 ---
 import { Font } from "astro:assets";
+import Announcement from "~/components/Announcement.astro";
 import Footer from "~/components/Footer.astro";
 import Header from "~/components/Header.astro";
 import { site } from "~/lib/settings";
@@ -62,6 +63,7 @@ const extraMeta = Object.entries(meta).flatMap(([name, value]) =>
 	</head>
 	<body class="flex min-h-screen flex-col">
 		<a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-accent focus:p-4">Skip to content</a>
+		<Announcement />
 		<Header />
 		<main id="main" class:list={["flex-grow", className]}>
 			<slot />

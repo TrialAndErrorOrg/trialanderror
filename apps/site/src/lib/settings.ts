@@ -41,6 +41,14 @@ const siteSchema = z.object({
 		/** How article lists (all articles, issues, types) look: cards with the abstract, or a compact list */
 		listStyle: z.enum(["cards", "list"]).default("cards"),
 	}),
+	/** A line across the top of every page, for news that shouldn't be missed. Hidden after `until` */
+	announcement: z
+		.object({
+			text: z.string(),
+			url: z.string().optional(),
+			until: z.coerce.date().optional(),
+		})
+		.optional(),
 	newsletter: z.object({
 		title: z.string(),
 		text: z.string(),

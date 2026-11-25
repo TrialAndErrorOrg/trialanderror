@@ -1,0 +1,32 @@
+---
+import { Icon } from "astro-icon/components";
+import { site } from "~/lib/settings";
+
+/* The announcement from Settings, across the top of every page until its end date */
+
+const announcement = site.announcement;
+const live = announcement && (!announcement.until || announcement.until > new Date());
+---
+
+{
+	live && (
+		<div class="border-b-frame border-ink bg-accent" data-until={announcement.until?.toISOString()}>
+			<p class="page flex items-center justify-center gap-2 py-2 text-center font-heading font-bold">
+				{announcement.url ? (
+					<a href={announcement.url} class="group inline-flex items-center gap-2 underline-offset-4 hover:underline">
+						{announcement.text}
+						<Icon name="lucide:arrow-right" class="size-4 shrink-0 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+					</a>
+				) : (
+					announcement.text
+				)}
+			</p>
+		</div>
+	)
+}
+
+<script>
+	for (const bar of document.querySelectorAll<HTMLElement>("[data-until]")) {
+		if (Date.parse(bar.dataset.until!) < Date.now()) bar.remove();
+	}
+</script>

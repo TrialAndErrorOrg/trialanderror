@@ -160,6 +160,12 @@ const section = z.discriminatedUnion("type", [
 		count: z.number().int().positive().default(3),
 	}),
 	z.object({
+		type: z.literal("events"),
+		id: z.string().optional(),
+		title: z.string().default("Events"),
+		count: z.number().int().positive().default(3),
+	}),
+	z.object({
 		type: z.literal("editorial-board"),
 		id: z.string().optional(),
 		title: z.string().optional(),
@@ -294,4 +300,35 @@ const categories = defineCollection({
 	}),
 });
 
-export const collections = { pages, blog, people, categories };
+/*
+ * Events: symposia, talks, workshops. Edited in /admin (Events), listed at
+ * /events and in the calendar feed /events.ics.
+ */
+const events = defineCollection({
+	loader: glob({ pattern: "**/*.md", base: `${contentDir}/events` }),
+	schema: z.object({
+		title: z.string(),
+		/** When it starts, in UTC like 2026-03-12T13:00:00Z */
+		start: z.coerce.date(),
+		end: z.coerce.date().optional(),
+		/** A day (or days) rather than set hours: times aren't shown */
+		allDay: z.boolean().default(false),
+		/** Where, like "University Museum Utrecht" */
+		location: z.string().optional(),
+		/** Street address, for maps and calendars */
+		address: z.string().optional(),
+		/** Where to join online */
+		online: z.url().optional(),
+		/** Where to sign up */
+		registration: z.url().optional(),
+		summary: z.string().optional(),
+		image: z.string().optional(),
+		imageAlt: z.string().optional(),
+		/** A blog post about how it went */
+		report: z.string().optional(),
+		/** symposium, talk, workshop... */
+		kind: z.string().optional(),
+	}),
+});
+
+export const collections = { pages, blog, people, categories, events };

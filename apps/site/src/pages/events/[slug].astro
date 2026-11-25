@@ -1,0 +1,113 @@
+---
+import type { GetStaticPaths } from "astro";
+import { Icon } from "astro-icon/components";
+import Picture from "~/components/Picture.astro";
+import Base from "~/layouts/Base.astro";
+import { getPost } from "~/lib/sources/blog";
+import { endOf, formatWhen, getEvents, type SiteEvent } from "~/lib/sources/events";
+
+export const getStaticPaths = (async () => (await getEvents()).map((event) => ({ params: { slug: event.slug }, props: { event } }))) satisfies GetStaticPaths;
+
+const { event } = Astro.props as { event: SiteEvent };
+const report = event.report ? await getPost(event.report) : undefined;
+const over = endOf(event) < new Date();
+const google = new URL("https://calendar.google.com/calendar/render");
+const gdate = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+google.searchParams.set("action", "TEMPLATE");
+google.searchParams.set("text", event.title);
+google.searchParams.set("dates", `${gdate(event.start)}/${gdate(endOf(event))}`);
+google.searchParams.set("details", new URL(event.url, Astro.site).href);
+if (event.location || event.address) google.searchParams.set("location", [event.location, event.address].filter(Boolean).join(", "));
+
+// schema.org Event, so search engines can show it with its date and place
+const jsonLd = {
+	"@context": "https://schema.org",
+	"@type": "Event",
+	name: event.title,
+	startDate: event.start.toISOString(),
+	endDate: endOf(event).toISOString(),
+	eventAttendanceMode: `https://schema.org/${event.online && event.location ? "Mixed" : event.online ? "Online" : "Offline"}EventAttendanceMode`,
+	eventStatus: "https://schema.org/EventScheduled",
+	location: [
+		...(event.location ? [{ "@type": "Place", name: event.location, address: event.address ?? event.location }] : []),
+		...(event.online ? [{ "@type": "VirtualLocation", url: event.online }] : []),
+	],
+	description: event.summary,
+	image: event.image ? new URL(event.image.url, Astro.site).href : undefined,
+	organizer: { "@type": "Organization", name: "Center of Trial and Error", url: "https://trialanderror.org" },
+	url: new URL(event.url, Astro.site).href,
+};
+---
+
+<Base title={event.title} description={event.summary}>
+	<script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+	<div class="border-b-frame border-ink bg-accent-soft">
+		<div class="page grid gap-10 py-12 md:py-16 lg:grid-cols-[3fr_2fr] lg:items-center">
+			<div class="flex flex-col gap-5">
+				<a href="/events" class="self-start font-heading font-bold underline-offset-4 hover:underline">← Events</a>
+				{event.kind && <p class="label self-start">{event.kind}</p>}
+				<h1 class="font-heading text-4xl leading-[1.05] font-black tracking-tighter md:text-6xl">{event.title}</h1>
+				{event.summary && <p class="max-w-3xl text-lg md:text-xl">{event.summary}</p>}
+			</div>
+			<div class="flex flex-col gap-4 border-frame border-ink bg-paper p-6 shadow-hard-lg">
+				<p class="flex items-start gap-3 font-semibold"><Icon name="lucide:calendar" class="mt-0.5 size-5 shrink-0" aria-hidden="true" />{formatWhen(event)}</p>
+				{
+					event.location && (
+						<p class="flex items-start gap-3">
+							<Icon name="lucide:map-pin" class="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+							<span>
+								{event.location}
+								{event.address && <span class="block text-sm text-muted">{event.address}</span>}
+							</span>
+						</p>
+					)
+				}
+				{
+					event.online && (
+						<p class="flex items-start gap-3">
+							<Icon name="lucide:video" class="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+							<a href={event.online} class="font-semibold underline">Join online</a>
+						</p>
+					)
+				}
+				{
+					!over && (
+						<div class="flex flex-wrap gap-3 border-t-frame border-ink pt-4">
+							{event.registration && (
+								<a href={event.registration} class="button">
+									Sign up <Icon name="lucide:arrow-up-right" class="size-5" aria-hidden="true" />
+								</a>
+							)}
+							<a href={`/events/${event.slug}.ics`} class="button button-plain">
+								<Icon name="lucide:calendar-plus" class="size-5" aria-hidden="true" /> Add to calendar
+							</a>
+							<a href={google.href} class="button button-plain">
+								Google Calendar
+							</a>
+						</div>
+					)
+				}
+				{over && <p class="border-t-frame border-ink pt-4 text-sm font-semibold text-muted">This event has taken place.</p>}
+			</div>
+		</div>
+	</div>
+	<div class="page grid gap-10 py-12 lg:grid-cols-[minmax(0,48rem)_1fr]">
+		<div class="flex flex-col gap-8">
+			{event.image && <Picture image={event.image} width={1200} class="w-full border-frame border-ink" />}
+			{event.body && <div class="prose-site" set:html={event.body} />}
+		</div>
+		{
+			report && (
+				<aside class="self-start">
+					<a href={`/blog/${report.slug}`} class="card group p-6 hover:-translate-y-1 hover:shadow-hard">
+						<span class="font-heading text-sm font-bold text-muted uppercase">How it went</span>
+						<span class="font-heading text-xl leading-tight font-bold">{report.title}</span>
+						<span class="mt-2 flex items-center gap-1 font-heading font-bold">
+							Read the report <Icon name="lucide:arrow-right" class="size-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+						</span>
+					</a>
+				</aside>
+			)
+		}
+	</div>
+</Base>

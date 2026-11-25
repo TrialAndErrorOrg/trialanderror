@@ -1,26 +1,13 @@
 import { type CollectionEntry, getCollection } from "astro:content";
 import { marked } from "marked";
-import type { Person, Picture, Post, Term } from "../types";
+import type { Person, Post, Term } from "../types";
+import { uploadedPicture as picture } from "../uploads";
 
 /*
  * Reads the blog from site-content (blog/, people/, categories/), where /admin
  * edits it. Selected with BLOG_SOURCE=content, the default. Images under
  * /uploads are resized at build like any other; links (Unsplash) are fetched.
  */
-
-const uploads = import.meta.glob<{ default: ImageMetadata }>("@content/uploads/**/*.{webp,jpg,jpeg,png,avif,gif}");
-const uploadsByPath = new Map(
-	Object.entries(uploads).map(([key, load]) => [key.startsWith("@content/") ? key.slice("@content".length) : key.slice(key.indexOf("/uploads/")), load]),
-);
-
-async function picture(path: string | undefined, alt?: string, where?: string): Promise<Picture | undefined> {
-	if (!path) return undefined;
-	if (/^https?:\/\//.test(path)) return { url: path, alt };
-	const load = uploadsByPath.get(path);
-	if (!load) throw new Error(`${where}: ${path} is not in site-content's uploads`);
-	const src = (await load()).default;
-	return { url: src.src, src, width: src.width, height: src.height, alt };
-}
 
 const slugify = (text: string) =>
 	text

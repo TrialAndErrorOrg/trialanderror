@@ -1,0 +1,47 @@
+---
+import type { Section } from "~/content.config";
+import { getEventsByTime } from "~/lib/sources/events";
+import EventCard from "../EventCard.astro";
+import EventsScript from "../EventsScript.astro";
+
+/* Upcoming events, or the most recent past ones when nothing is planned */
+
+type Props = Extract<Section, { type: "events" }>;
+const { id, title, count } = Astro.props;
+const { upcoming, past } = await getEventsByTime();
+const shown = upcoming.slice(0, count);
+const recent = past.slice(0, count);
+---
+
+{
+	(shown.length > 0 || recent.length > 0) && (
+		<section id={id} class="page scroll-mt-24 py-16">
+			<div class="mb-10 flex flex-wrap items-end justify-between gap-4">
+				<h2 class="section-title flex-grow">{title}</h2>
+				<a href="/events" class="button button-plain">
+					All events
+				</a>
+			</div>
+			{shown.length > 0 && (
+				<ul class="flex flex-col gap-6" data-upcoming>
+					{shown.map((event) => (
+						<li>
+							<EventCard event={event} upcoming />
+						</li>
+					))}
+				</ul>
+			)}
+			<div data-none hidden={shown.length > 0} class="flex flex-col gap-6">
+				<p class="text-lg">Nothing planned right now. This is what we did last:</p>
+				<ul class="flex flex-col gap-6">
+					{recent.map((event) => (
+						<li>
+							<EventCard event={event} />
+						</li>
+					))}
+				</ul>
+			</div>
+			<EventsScript />
+		</section>
+	)
+}
