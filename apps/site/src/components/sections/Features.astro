@@ -1,29 +1,58 @@
 ---
+import { Icon } from "astro-icon/components";
 import type { Section } from "~/content.config";
 import Markdown from "../Markdown.astro";
 
+/*
+ * Columns side by side. A column with a colour gets a title bar in that part
+ * of the site's colour, and its link covers the whole card.
+ */
+
 type Props = Extract<Section, { type: "features" }>;
 const { id, title, items } = Astro.props;
+const bars = {
+	accent: "bg-accent text-ink",
+	journal: "bg-journal text-paper",
+	blog: "bg-paper text-ink border-b-heavy border-accent",
+};
 ---
 
 <section id={id} class="page py-16">
 	{title && <h2 class="section-title mb-10">{title}</h2>}
 	<div class="grid gap-6 md:grid-cols-3">
 		{
-			items.map((item, i) => (
-				<div class="card p-6 md:p-8">
-					<span class="mb-4 font-heading text-6xl leading-none font-black text-accent [-webkit-text-stroke:2px_var(--color-ink)]">
-						{String(i + 1).padStart(2, "0")}
-					</span>
-					<h3 class="mb-3 font-heading text-3xl font-black">{item.title}</h3>
-					<Markdown text={item.body} class="prose-site text-base" />
-					{item.link && (
-						<a href={item.link.url} class="sleek-underline mt-4 self-start font-heading font-bold">
-							{item.link.label} →
-						</a>
-					)}
-				</div>
-			))
+			items.map((item, i) =>
+				item.color ? (
+					<div class="card group">
+						<div class:list={["flex items-baseline justify-between gap-4 border-b-frame border-ink px-6 py-4", bars[item.color]]}>
+							<h3 class="font-heading text-3xl font-black">{item.title}</h3>
+							<span class="font-heading text-2xl font-black opacity-60">{String(i + 1).padStart(2, "0")}</span>
+						</div>
+						<div class="flex flex-grow flex-col gap-4 p-6 md:p-8">
+							<Markdown text={item.body} class="prose-site relative z-10 text-base" />
+							{item.link && (
+								<a href={item.link.url} class="card-link mt-auto flex items-center gap-2 self-start font-heading text-lg font-bold">
+									{item.link.label}
+									<Icon name="lucide:arrow-right" class="size-5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+								</a>
+							)}
+						</div>
+					</div>
+				) : (
+					<div class="card p-6 md:p-8">
+						<span class="mb-4 font-heading text-6xl leading-none font-black text-accent [-webkit-text-stroke:2px_var(--color-ink)]">
+							{String(i + 1).padStart(2, "0")}
+						</span>
+						<h3 class="mb-3 font-heading text-3xl font-black">{item.title}</h3>
+						<Markdown text={item.body} class="prose-site text-base" />
+						{item.link && (
+							<a href={item.link.url} class="sleek-underline mt-4 self-start font-heading font-bold">
+								{item.link.label} →
+							</a>
+						)}
+					</div>
+				),
+			)
 		}
 	</div>
 </section>

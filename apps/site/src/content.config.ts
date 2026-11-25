@@ -131,6 +131,8 @@ const section = z.discriminatedUnion("type", [
 				title: z.string(),
 				body: z.string(),
 				link: z.object({ label: z.string(), url: z.string() }).optional(),
+				/** Colour the column like a part of the site: accent (the Center), journal or blog */
+				color: z.enum(["accent", "journal", "blog"]).optional(),
 			}),
 		),
 	}),

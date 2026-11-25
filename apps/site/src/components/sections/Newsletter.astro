@@ -1,5 +1,9 @@
 ---
 import { site } from "~/lib/settings";
+
+// The sign-up goes to Substack (https://<pub>.substack.com/api/v1/free) or a Mailchimp list,
+// depending on the address in Settings. They name the email field differently
+const substack = new URL(site.newsletter.action).hostname.endsWith("substack.com");
 ---
 
 <section class="page py-16">
@@ -14,7 +18,7 @@ import { site } from "~/lib/settings";
 				<input
 					id="newsletter-email"
 					type="email"
-					name="EMAIL"
+					name={substack ? "email" : "EMAIL"}
 					required
 					autocomplete="email"
 					placeholder="you@example.org"
@@ -22,10 +26,14 @@ import { site } from "~/lib/settings";
 				/>
 				<button type="submit" class="button button-plain justify-center">Subscribe</button>
 			</div>
-			<!-- Mailchimp's bot trap -->
-			<div aria-hidden="true" class="absolute -left-[5000px]">
-				<input type="text" name="b_3b2e720baa7621e1bde91b1a2_13b78e80c7" tabindex="-1" value="" />
-			</div>
+			{
+				!substack && (
+					// Mailchimp's bot trap
+					<div aria-hidden="true" class="absolute -left-[5000px]">
+						<input type="text" name="b_3b2e720baa7621e1bde91b1a2_13b78e80c7" tabindex="-1" value="" />
+					</div>
+				)
+			}
 		</form>
 	</div>
 </section>
