@@ -18,6 +18,9 @@ const background = z.enum(["paper", "accent", "accent-soft", "journal", "journal
 export const articleStyle = z.enum(["cards", "list"]);
 
 /** Roles on the journal's editorial board, in the order the board lists them */
+/** Who supports the Center: funders, partners and donors, thanked on the site */
+export const supporterKinds = ["funder", "partner", "donor"] as const;
+
 /** The editorial board's roles, then the editorial office's */
 export const journalRoles = ["editor-in-chief", "section-editor", "editor", "advisory-board", "managing-editor", "production-editor", "copy-editor"] as const;
 
@@ -148,6 +151,24 @@ const section = z.discriminatedUnion("type", [
 		count: z.number().int().positive().default(4),
 		/** featured: the newest big with its cover and the others listed beside it */
 		style: z.enum(["featured", ...articleStyle.options]).default("cards"),
+	}),
+	z.object({
+		type: z.literal("donate"),
+		id: z.string().optional(),
+		title: z.string().optional(),
+		text: z.string().optional(),
+		/** Stripe's buy button, from Stripe's dashboard (Payment Links, Buy button) */
+		stripe: z.object({ buttonId: z.string(), publishableKey: z.string() }).optional(),
+		/** For a bank transfer */
+		bank: z.object({ name: z.string(), iban: z.string(), bic: z.string().optional() }).optional(),
+	}),
+	z.object({
+		type: z.literal("supporters"),
+		id: z.string().optional(),
+		title: z.string().default("With thanks to"),
+		intro: z.string().optional(),
+		/** Which kinds to show, all when empty */
+		kinds: z.array(z.enum(supporterKinds)).default([]),
 	}),
 	z.object({
 		type: z.literal("featured-issue"),
@@ -347,4 +368,21 @@ const events = defineCollection({
 	}),
 });
 
-export const collections = { pages, blog, people, categories, events };
+/** Who supports the Center, thanked on the site */
+const supporters = defineCollection({
+	loader: glob({ pattern: "**/*.yaml", base: `${contentDir}/supporters` }),
+	schema: z.object({
+		name: z.string(),
+		kind: z.enum(supporterKinds).default("donor"),
+		url: z.url().optional(),
+		logo: z.string().optional(),
+		/** What they supported, like "the Cultures of Trial and Error series" */
+		note: z.string().optional(),
+		/** The year their support started */
+		since: z.number().int().optional(),
+		/** Shown first within their kind */
+		order: z.number().int().default(0),
+	}),
+});
+
+export const collections = { pages, blog, people, categories, events, supporters };

@@ -49,7 +49,7 @@ collections:
   - name: pages
     label: Pages
     label_singular: Page
-    description: Pages built from sections. "index" is the homepage and "journal" the journal's front page. Free-text pages (donate, events) still live in Strapi.
+    description: Pages built from sections. "index" is the homepage and "journal" the journal's front page.
     folder: pages
     extension: yaml
     format: yaml
@@ -132,6 +132,39 @@ collections:
               - { name: title, label: Title, widget: string, default: From the Journal }
               - { name: count, label: How many, widget: number, value_type: int, default: 4, min: 1 }
               - { name: style, label: Look, widget: select, options: [{ label: The newest big with the others beside it, value: featured }, { label: Cards with the abstract, value: cards }, { label: Compact list, value: list }], default: cards }
+          - name: donate
+            label: Donate (Stripe button and bank details)
+            widget: object
+            summary: "{{title}}"
+            fields:
+              - { name: title, label: Title, widget: string, required: false }
+              - { name: text, label: Text, widget: markdown, required: false }
+              - name: stripe
+                label: Stripe buy button
+                widget: object
+                required: false
+                hint: From Stripe's dashboard, Payment Links, Buy button
+                fields:
+                  - { name: buttonId, label: Button ID (buy_btn_...), widget: string }
+                  - { name: publishableKey, label: Publishable key (pk_live_...), widget: string }
+              - name: bank
+                label: Bank transfer
+                widget: object
+                required: false
+                fields:
+                  - { name: name, label: Account name, widget: string }
+                  - { name: iban, label: IBAN, widget: string }
+                  - { name: bic, label: BIC, widget: string, required: false }
+              - { name: id, label: "Anchor (link to it with #anchor)", widget: string, required: false }
+          - name: supporters
+            label: Supporters (from Supporters)
+            widget: object
+            summary: "{{title}}"
+            fields:
+              - { name: title, label: Title, widget: string, default: With thanks to }
+              - { name: intro, label: Text above, widget: markdown, required: false }
+              - { name: kinds, label: Show, widget: select, multiple: true, required: false, options: [{ label: Funders, value: funder }, { label: Partners, value: partner }, { label: Donors, value: donor }], hint: Empty shows everyone }
+              - { name: id, label: "Anchor (link to it with #anchor)", widget: string, required: false }
           - name: featured-issue
             label: Featured journal issue
             widget: object
@@ -503,6 +536,28 @@ collections:
           - { name: icon, label: Kind, widget: select, options: [website, bluesky, mastodon, linkedin, github, twitter] }
           - { name: url, label: Link, widget: string }
       - { name: aliases, label: Old addresses (leave as they are), widget: list, required: false, hint: "Earlier /people/... names, which keep redirecting here" }
+
+  - name: supporters
+    label: Supporters
+    label_singular: Supporter
+    description: Funders, partners and donors, thanked on the Donate page and wherever a Supporters section is placed.
+    folder: supporters
+    extension: yaml
+    format: yaml
+    create: true
+    slug: "{{name}}"
+    identifier_field: name
+    summary: "{{name}} ({{kind}})"
+    media_folder: /uploads/supporters
+    public_folder: /uploads/supporters
+    fields:
+      - { name: name, label: Name, widget: string }
+      - { name: kind, label: Kind, widget: select, options: [{ label: "Funder (grants, subsidies)", value: funder }, { label: "Partner (organisations we work with)", value: partner }, { label: "Donor (people and organisations who gave)", value: donor }], default: donor }
+      - { name: url, label: Website, widget: string, required: false }
+      - { name: logo, label: Logo, widget: image, required: false, hint: Leave empty for people; the name is shown instead }
+      - { name: note, label: "What they supported (optional)", widget: string, required: false }
+      - { name: since, label: Since (year), widget: number, value_type: int, required: false }
+      - { name: order, label: Order (higher first), widget: number, value_type: int, default: 0, required: false }
 
   - name: categories
     label: Blog categories

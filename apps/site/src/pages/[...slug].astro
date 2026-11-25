@@ -2,37 +2,22 @@
 import type { GetStaticPaths } from "astro";
 import { getCollection, type CollectionEntry } from "astro:content";
 import AdConsent from "~/components/AdConsent.astro";
-import Page from "~/layouts/Page.astro";
 import SectionsPage from "~/layouts/SectionsPage.astro";
 import { site } from "~/lib/settings";
-import { getCmsPages, type CmsPage } from "~/lib/sources/pages";
 
-type Props = { local: CollectionEntry<"pages"> } | { cms: CmsPage };
-
-// Pages in site-content win over Strapi pages with the same slug
+// Every page in site-content's pages/, except those with a page of their own
 export const getStaticPaths = (async () => {
 	// The homepage and the journal's front page have pages of their own (index.astro, journal/index.astro)
 	const OWN_PAGES = ["index", "journal"];
 	// pages/journal/* are the journal's (journal/[slug].astro)
 	const local = (await getCollection("pages")).filter((p) => !OWN_PAGES.includes(p.id) && !p.id.startsWith("journal/"));
-	const localSlugs = new Set([...local.map((p) => p.id), ...OWN_PAGES]);
-	const cms = (await getCmsPages()).filter((p) => !localSlugs.has(p.slug));
-	return [
-		...local.map((page) => ({ params: { slug: page.id }, props: { local: page } })),
-		...cms.map((page) => ({ params: { slug: page.slug }, props: { cms: page } })),
-	];
+	return local.map((page) => ({ params: { slug: page.id }, props: { page } }));
 }) satisfies GetStaticPaths;
 
-const props = Astro.props as Props;
+const { page } = Astro.props as { page: CollectionEntry<"pages"> };
 const tracksAds = site.adTracking?.pages.includes(Astro.params.slug ?? "") ?? false;
 ---
 
-{
-	"local" in props ? (
-		<SectionsPage page={props.local.data} searchSection="Page" />
-	) : (
-		<Page title={props.cms.title} description={props.cms.description} body={props.cms.body}>
-			{tracksAds && <AdConsent />}
-		</Page>
-	)
-}
+<SectionsPage page={page.data} searchSection="Page">
+	{tracksAds && <AdConsent />}
+</SectionsPage>

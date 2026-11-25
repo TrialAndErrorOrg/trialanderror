@@ -1,0 +1,70 @@
+---
+import { getCollection } from "astro:content";
+import type { Section } from "~/content.config";
+import Markdown from "../Markdown.astro";
+
+/*
+ * Thanks to who supports the Center, from site-content's supporters/:
+ * funders, partners and donors, with their logos where they have one.
+ */
+
+type Props = Extract<Section, { type: "supporters" }>;
+const { id, title, intro, kinds } = Astro.props;
+
+const GROUPS = [
+	{ kind: "funder", title: "Funders" },
+	{ kind: "partner", title: "Partners" },
+	{ kind: "donor", title: "Donors" },
+] as const;
+
+const all = (await getCollection("supporters")).map((e) => e.data);
+const groups = GROUPS.filter((g) => kinds.length === 0 || kinds.includes(g.kind))
+	.map((g) => ({
+		...g,
+		people: all.filter((s) => s.kind === g.kind).sort((a, b) => b.order - a.order || a.name.localeCompare(b.name)),
+	}))
+	.filter((g) => g.people.length > 0);
+---
+
+{
+	groups.length > 0 && (
+		<section id={id} class="page scroll-mt-24 py-12">
+			<h2 class="section-title mb-6">{title}</h2>
+			{intro && <Markdown text={intro} class="prose-site mb-10" />}
+			<div class="flex flex-col gap-10">
+				{groups.map((group) => (
+					<div class="flex flex-col gap-4">
+						{groups.length > 1 && <h3 class="border-b-heavy border-ink pb-2 font-heading text-sm font-black tracking-widest uppercase">{group.title}</h3>}
+						<ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+							{group.people.map((s) => {
+								const Tag = s.url ? "a" : "div";
+								return (
+									<li>
+										<Tag
+											href={s.url}
+											class:list={["flex h-full flex-col gap-3 border-frame border-ink bg-paper p-5", s.url && "transition-all hover:-translate-y-0.5 hover:shadow-hard"]}
+										>
+											{s.logo ? (
+												<img src={s.logo} alt={s.name} class="h-14 w-full object-contain object-left" loading="lazy" />
+											) : (
+												<span class="font-heading text-xl leading-tight font-black tracking-tight">{s.name}</span>
+											)}
+											{s.logo && <span class="font-heading font-bold">{s.name}</span>}
+											{(s.note || s.since) && (
+												<span class="text-sm text-muted">
+													{s.note}
+													{s.note && s.since && " · "}
+													{s.since && `since ${s.since}`}
+												</span>
+											)}
+										</Tag>
+									</li>
+								);
+							})}
+						</ul>
+					</div>
+				))}
+			</div>
+		</section>
+	)
+}
