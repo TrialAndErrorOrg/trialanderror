@@ -166,13 +166,14 @@ collections:
               - { name: id, label: "Anchor (link to it with #anchor)", widget: string, required: false }
               - { name: count, label: How many, widget: number, value_type: int, default: 3, min: 1 }
           - name: editorial-board
-            label: Editorial board (everyone with a journal role in People)
+            label: Editorial team (everyone with a journal role in People)
             widget: object
             summary: "{{title}}"
             fields:
               - { name: title, label: Title, widget: string, required: false }
               - { name: id, label: "Anchor (link to it with #anchor)", widget: string, required: false }
-              - { name: intro, label: Text above the board, widget: markdown, required: false }
+              - { name: intro, label: Text above the team, widget: markdown, required: false }
+              - { name: part, label: Who, widget: select, options: [{ label: "Board and office", value: all }, { label: "Editorial board (editors)", value: board }, { label: "Editorial office (managing, production and copy editors)", value: office }], default: all }
           - name: team
             label: Team
             widget: object
@@ -465,21 +466,23 @@ collections:
       - { name: email, label: Email (shown for team members), widget: string, required: false }
       - { name: orcid, label: ORCID iD, widget: string, required: false, hint: "Like https://orcid.org/0000-0002-1825-0097" }
       - name: journal
-        label: Journal editorial board
+        label: Journal editorial team
         widget: object
         required: false
         collapsed: true
-        hint: Fill in to list this person on the journal's editorial board
+        hint: Fill in to list this person on the journal's editorial team page
         fields:
           - name: role
             label: Role
             widget: select
             options:
               - { label: Editor-in-Chief, value: editor-in-chief }
-              - { label: Managing Editor, value: managing-editor }
               - { label: Section Editor, value: section-editor }
               - { label: Editor, value: editor }
               - { label: Advisory Board, value: advisory-board }
+              - { label: Managing Editor (editorial office), value: managing-editor }
+              - { label: Production Editor (editorial office), value: production-editor }
+              - { label: Copy Editor (editorial office), value: copy-editor }
           - { name: section, label: "Section they edit (Psychology, Life Sciences...)", widget: string, required: false }
       - name: links
         label: Links

@@ -18,7 +18,8 @@ const background = z.enum(["paper", "accent", "accent-soft", "journal", "journal
 export const articleStyle = z.enum(["cards", "list"]);
 
 /** Roles on the journal's editorial board, in the order the board lists them */
-export const journalRoles = ["editor-in-chief", "managing-editor", "section-editor", "editor", "advisory-board"] as const;
+/** The editorial board's roles, then the editorial office's */
+export const journalRoles = ["editor-in-chief", "section-editor", "editor", "advisory-board", "managing-editor", "production-editor", "copy-editor"] as const;
 
 /*
  * Building blocks for structured pages, like the journal's For Authors page.
@@ -172,6 +173,8 @@ const section = z.discriminatedUnion("type", [
 		id: z.string().optional(),
 		title: z.string().optional(),
 		intro: z.string().optional(),
+		/** The board (editors), the office (managing, production and copy editors), or both */
+		part: z.enum(["all", "board", "office"]).default("all"),
 	}),
 	z.object({
 		type: z.literal("team"),

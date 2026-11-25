@@ -2,92 +2,136 @@
 import type { Section } from "~/content.config";
 import { personHref } from "~/lib/people";
 import { getEditorialBoard } from "~/lib/sources/blog";
-import type { Person } from "~/lib/types";
+import type { JournalRole, Person } from "~/lib/types";
 import Markdown from "../Markdown.astro";
 import Picture from "../Picture.astro";
 import SocialIcon from "../SocialIcon.astro";
 
 /*
- * The journal's editorial board, made from site-content's people: everyone
- * with a journal role, grouped by role. Changing someone's role in /admin
- * (People) changes the board.
+ * The journal's editorial team, made from site-content's people: everyone
+ * with a journal role, as the editorial board (the editors who handle
+ * submissions) and the editorial office (managing, production and copy
+ * editors), grouped by role. Changing someone's role in /admin (People)
+ * changes the page.
  */
 
 type Props = Extract<Section, { type: "editorial-board" }>;
-const { id, title, intro } = Astro.props;
+const { id, title, intro, part } = Astro.props;
 
-const ROLES: Record<NonNullable<Person["journal"]>["role"], [one: string, many: string]> = {
-	"editor-in-chief": ["Editor-in-Chief", "Editors-in-Chief"],
-	"managing-editor": ["Managing Editor", "Managing Editors"],
-	"section-editor": ["Section Editor", "Section Editors"],
-	editor: ["Editor", "Editors"],
-	"advisory-board": ["Advisory Board", "Advisory Board"],
-};
+const PARTS: { key: "board" | "office"; title: string; roles: Partial<Record<JournalRole, [one: string, many: string]>> }[] = [
+	{
+		key: "board",
+		title: "Editorial board",
+		roles: {
+			"editor-in-chief": ["Editor-in-Chief", "Editors-in-Chief"],
+			"section-editor": ["Section Editor", "Section Editors"],
+			editor: ["Editor", "Editors"],
+			"advisory-board": ["Advisory Board", "Advisory Board"],
+		},
+	},
+	{
+		key: "office",
+		title: "Editorial office",
+		roles: {
+			"managing-editor": ["Managing Editor", "Managing Editors"],
+			"production-editor": ["Production Editor", "Production Editors"],
+			"copy-editor": ["Copy Editor", "Copy Editors"],
+		},
+	},
+];
 
-const board = await getEditorialBoard();
-const groups = Object.entries(ROLES)
-	.map(([role, [one, many]]) => {
-		const people = board.filter((p) => p.journal?.role === role).sort((a, b) => (a.journal?.section ?? "").localeCompare(b.journal?.section ?? ""));
-		return { role, title: people.length === 1 ? one : many, people };
-	})
-	.filter((g) => g.people.length > 0);
-const hrefs = new Map(await Promise.all(board.map(async (p) => [p, await personHref(p, true)] as const)));
+const team = await getEditorialBoard();
+const parts = PARTS.filter((p) => part === "all" || p.key === part)
+	.map((p) => ({
+		...p,
+		groups: Object.entries(p.roles)
+			.map(([role, [one, many]]) => {
+				const people = team.filter((person) => person.journal?.role === role).sort((a, b) => (a.journal?.section ?? "").localeCompare(b.journal?.section ?? ""));
+				return { role, title: people.length === 1 ? one : many, people };
+			})
+			.filter((g) => g.people.length > 0),
+	}))
+	.filter((p) => p.groups.length > 0);
+const hrefs = new Map(await Promise.all(team.map(async (p) => [p, await personHref(p, true)] as const)));
+const initials = (person: Person) =>
+	person.name
+		.split(/\s+/)
+		.filter((w) => /^\p{Lu}/u.test(w))
+		.map((w) => w[0])
+		.slice(0, 2)
+		.join("");
+// Two headings levels below the section's title, or one when there is only one part
+const showParts = parts.length > 1;
 ---
 
 <section id={id} class="page scroll-mt-24 py-12">
 	{title && <h2 class="section-title mb-6 text-journal after:bg-journal">{title}</h2>}
-	{intro && <Markdown text={intro} class="prose-site mb-12" />}
-	<div class="flex flex-col gap-14">
+	{intro && <Markdown text={intro} class="prose-site mb-10" />}
+	<div class="flex flex-col gap-16">
 		{
-			groups.map((group) => (
-				<div class="flex flex-col gap-6">
-					<h3 class="border-b-heavy border-journal pb-2 font-heading text-sm font-black tracking-widest text-journal uppercase">{group.title}</h3>
-					<ul class:list={["grid gap-8", group.role === "editor-in-chief" ? "lg:grid-cols-1" : "md:grid-cols-2 xl:grid-cols-3"]}>
-						{group.people.map((person) => (
-							<li class:list={["card group", group.role === "editor-in-chief" && "md:flex-row"]}>
-								<div class:list={["relative overflow-hidden border-ink bg-journal-soft", group.role === "editor-in-chief" ? "aspect-square border-b-frame md:w-72 md:shrink-0 md:border-r-frame md:border-b-0" : "aspect-[4/3] border-b-frame"]}>
-									<Picture image={person.image} width={600} class="size-full object-cover" alt={person.name} />
-									{person.journal?.section && <span class="label label-journal absolute bottom-4 left-0 border-l-0">{person.journal.section}</span>}
-								</div>
-								<div class="flex flex-grow flex-col gap-3 p-6">
-									<h4 class="font-heading text-2xl leading-tight font-black tracking-tight">
-										{hrefs.get(person) ? (
-											<a href={hrefs.get(person)} class="card-link">
-												{person.name}
-											</a>
-										) : (
-											person.name
-										)}
-										{person.pronouns && <span class="ml-2 align-middle font-sans text-sm font-normal text-muted">{person.pronouns}</span>}
-									</h4>
-									{person.summary && <div class:list={["prose prose-sm max-w-none text-ink", group.role !== "editor-in-chief" && "line-clamp-6"]} set:html={person.summary} />}
-									<ul class="relative z-10 mt-auto flex flex-wrap gap-3 pt-2">
-										{person.orcid && (
-											<li>
-												<a href={person.orcid} aria-label={`ORCID of ${person.name}`} class="text-orcid">
-													<SocialIcon icon="orcid" />
-												</a>
-											</li>
-										)}
-										{person.email && (
-											<li>
-												<a href={`mailto:${person.email}`} aria-label={`Email ${person.name}`} class="hover:text-journal">
-													<SocialIcon icon="email" />
-												</a>
-											</li>
-										)}
-										{person.links.map((l) => (
-											<li>
-												<a href={l.url} aria-label={l.icon} class="hover:text-journal">
-													<SocialIcon icon={l.icon} />
-												</a>
-											</li>
-										))}
-									</ul>
-								</div>
-							</li>
-						))}
-					</ul>
+			parts.map((p) => (
+				<div class="flex flex-col gap-10">
+					{showParts && <h3 class="font-heading text-3xl font-black tracking-tight text-journal md:text-4xl">{p.title}</h3>}
+					{p.groups.map((group) => (
+						<div class="flex flex-col gap-5">
+							<h4 class="border-b-heavy border-journal pb-2 font-heading text-sm font-black tracking-widest text-journal uppercase">{group.title}</h4>
+							<ul class:list={["grid gap-5", group.role === "editor-in-chief" ? "grid-cols-1 lg:w-2/3" : "md:grid-cols-2 xl:grid-cols-3"]}>
+								{group.people.map((person) => {
+									const big = group.role === "editor-in-chief";
+									return (
+										<li class="card group flex-row">
+											<div class:list={["relative shrink-0 overflow-hidden border-r-frame border-ink bg-journal-soft", big ? "w-32 md:w-40" : "w-24 md:w-28"]}>
+												{person.image ? (
+													<Picture image={person.image} width={320} class="absolute inset-0 size-full object-cover" alt="" />
+												) : (
+													<span class="absolute inset-0 flex items-center justify-center font-heading text-3xl font-black text-journal" aria-hidden="true">
+														{initials(person)}
+													</span>
+												)}
+											</div>
+											<div class="flex min-w-0 flex-grow flex-col gap-1.5 p-4">
+												<p class="font-heading text-lg leading-tight font-black tracking-tight">
+													{hrefs.get(person) ? (
+														<a href={hrefs.get(person)} class="card-link">
+															{person.name}
+														</a>
+													) : (
+														person.name
+													)}
+													{person.pronouns && <span class="ml-1.5 align-middle font-sans text-xs font-normal text-muted">{person.pronouns}</span>}
+												</p>
+												{person.journal?.section && <p class="font-heading text-sm font-bold text-journal">{person.journal.section}</p>}
+												{person.summary && <div class:list={["prose prose-sm max-w-none text-sm leading-snug text-ink", big ? "line-clamp-4" : "line-clamp-3"]} set:html={person.summary} />}
+												<ul class="relative z-10 mt-auto flex flex-wrap gap-2.5 pt-1.5">
+													{person.orcid && (
+														<li>
+															<a href={person.orcid} aria-label={`ORCID of ${person.name}`} class="text-orcid">
+																<SocialIcon icon="orcid" class="size-5" />
+															</a>
+														</li>
+													)}
+													{person.email && (
+														<li>
+															<a href={`mailto:${person.email}`} aria-label={`Email ${person.name}`} class="hover:text-journal">
+																<SocialIcon icon="email" class="size-5" />
+															</a>
+														</li>
+													)}
+													{person.links.map((l) => (
+														<li>
+															<a href={l.url} aria-label={l.icon} class="hover:text-journal">
+																<SocialIcon icon={l.icon} class="size-5" />
+															</a>
+														</li>
+													))}
+												</ul>
+											</div>
+										</li>
+									);
+								})}
+							</ul>
+						</div>
+					))}
 				</div>
 			))
 		}

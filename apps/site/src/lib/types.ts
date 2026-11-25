@@ -30,7 +30,8 @@ export interface Person {
 	/** Old slugs, which redirect to this person's page */
 	aliases?: string[];
 	/** Their place on the journal's editorial board */
-	journal?: { role: "editor-in-chief" | "managing-editor" | "section-editor" | "editor" | "advisory-board"; section?: string };
+	/** Their place on the journal's editorial team */
+	journal?: { role: JournalRole; section?: string };
 }
 
 export interface Term {
@@ -75,3 +76,5 @@ export interface Article {
 	url: string;
 	license?: { name: string; url: string };
 }
+
+export type JournalRole = "editor-in-chief" | "section-editor" | "editor" | "advisory-board" | "managing-editor" | "production-editor" | "copy-editor";
