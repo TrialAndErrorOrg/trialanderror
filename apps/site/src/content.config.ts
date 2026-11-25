@@ -108,6 +108,8 @@ const section = z.discriminatedUnion("type", [
 		buttons: z.array(button).default([]),
 		/** accent: orange boxes (the Center), journal: blue boxes, blog: white boxes on orange */
 		color: z.enum(["accent", "journal", "blog"]).default("accent"),
+		/** Show the journal's numbers (articles, issues, first year) under the text */
+		stats: z.boolean().default(false),
 	}),
 	z.object({
 		type: z.literal("text"),
@@ -138,7 +140,16 @@ const section = z.discriminatedUnion("type", [
 		type: z.literal("latest-articles"),
 		title: z.string().default("From the Journal"),
 		count: z.number().int().positive().default(4),
-		style: articleStyle.default("cards"),
+		/** featured: the newest big with its cover and the others listed beside it */
+		style: z.enum(["featured", ...articleStyle.options]).default("cards"),
+	}),
+	z.object({
+		type: z.literal("article-types"),
+		id: z.string().optional(),
+		title: z.string().default("Browse by type"),
+		intro: z.string().optional(),
+		/** A line about each type, by its name in the journal ("Empirical") */
+		types: z.array(z.object({ kind: z.string(), text: z.string() })).default([]),
 	}),
 	z.object({
 		type: z.literal("issues"),

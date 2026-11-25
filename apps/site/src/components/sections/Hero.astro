@@ -1,14 +1,23 @@
 ---
 import type { Section } from "~/content.config";
+import { getArticles, getIssues } from "~/lib/sources/journal";
 import Markdown from "../Markdown.astro";
 import SectionHero from "../SectionHero.astro";
 
 type Props = Extract<Section, { type: "hero" }>;
-const { title, subtitle, text, buttons, color } = Astro.props;
+const { title, subtitle, text, buttons, color, stats } = Astro.props;
 
 // Each line of the title gets its own box, like the old sites' logos
 const lines = title.split("\n").filter(Boolean);
 const journal = color === "journal";
+
+const numbers = stats
+	? await Promise.all([getArticles(), getIssues()]).then(([articles, issues]) => [
+			{ value: articles.length, label: "articles" },
+			{ value: issues.filter((i) => !i.rolling).length, label: "issues" },
+			{ value: articles.at(-1)?.date.slice(0, 4), label: "first published" },
+		])
+	: [];
 ---
 
 <SectionHero lines={lines} color={color}>
@@ -23,6 +32,18 @@ const journal = color === "journal";
 					</a>
 				))}
 			</div>
+		)
+	}
+	{
+		numbers.length > 0 && (
+			<dl class="grid grid-cols-3 gap-4 border-t-frame border-ink pt-5">
+				{numbers.map((n) => (
+					<div class="flex flex-col-reverse">
+						<dt class="text-sm text-muted">{n.label}</dt>
+						<dd class:list={["font-heading text-3xl leading-none font-black md:text-4xl", journal && "text-journal"]}>{n.value}</dd>
+					</div>
+				))}
+			</dl>
 		)
 	}
 	<slot />

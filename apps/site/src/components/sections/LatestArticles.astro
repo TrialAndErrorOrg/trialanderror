@@ -1,19 +1,83 @@
 ---
+import { Icon } from "astro-icon/components";
 import type { Section } from "~/content.config";
+import { formatDate, listNames } from "~/lib/format";
 import { getArticles, journal } from "~/lib/sources/journal";
 import ArticleList from "../ArticleList.astro";
+import Picture from "../Picture.astro";
+
+/*
+ * The newest journal articles. "featured" puts the newest big, with its
+ * cover, and the next ones beside it, like the blog's front page.
+ */
 
 type Props = Extract<Section, { type: "latest-articles" }>;
 const { title, count, style } = Astro.props;
 const articles = (await getArticles()).slice(0, count);
+const [lead, ...rest] = articles;
+const all = journal().config.listPath;
 ---
 
 <section class="border-y-frame border-ink bg-journal-soft py-16">
 	<div class="page">
 		<div class="mb-10 flex flex-wrap items-end justify-between gap-4">
 			<h2 class="section-title flex-grow text-journal after:bg-journal">{title}</h2>
-			<a href={journal().config.listPath} class="button button-plain">All articles</a>
+			<a href={all} class="button button-plain">All articles</a>
 		</div>
-		<ArticleList articles={articles} style={style} class={style === "list" ? "max-w-none border-frame border-ink bg-paper px-6 [&>article:last-child]:border-b-0" : undefined} />
+		{
+			style === "featured" && lead ? (
+				<div class="grid gap-12 lg:grid-cols-[3fr_2fr]">
+					<article class="group relative flex flex-col gap-5">
+						{lead.image && (
+							<div class="relative aspect-[16/9] overflow-hidden border-frame border-ink shadow-[8px_8px_0_var(--color-journal)]">
+								<Picture image={lead.image} width={1200} class="size-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+								{lead.kind && <span class="label label-journal absolute top-5 left-0 border-l-0">{lead.kind}</span>}
+							</div>
+						)}
+						<h3 class="font-heading text-3xl leading-[1.05] font-black tracking-tighter md:text-5xl">
+							<a href={lead.url} class="decoration-journal decoration-4 underline-offset-8 group-hover:underline after:absolute after:inset-0">
+								{lead.title}
+							</a>
+						</h3>
+						{lead.authors.length > 0 && <p class="text-lg font-semibold">{listNames(lead.authors.map((a) => a.name))}</p>}
+						{lead.description && <p class="line-clamp-4 max-w-3xl text-lg">{lead.description}</p>}
+						<p class="text-sm text-muted">
+							<time datetime={lead.date}>{formatDate(lead.date)}</time>
+							{lead.doi && <span class="font-mono"> · doi.org/{lead.doi}</span>}
+						</p>
+					</article>
+					<div class="flex flex-col">
+						<h3 class="mb-6 border-b-heavy border-journal pb-2 font-heading text-sm font-black tracking-widest text-journal uppercase">Also new</h3>
+						{rest.map((article) => (
+							<article class="group relative flex gap-4 border-b border-ink/20 py-5 first:pt-0 last:border-b-0">
+								<div class="aspect-square w-20 shrink-0 overflow-hidden border-frame border-ink bg-paper md:w-24">
+									<Picture image={article.image} width={200} class="size-full object-cover transition-transform duration-300 group-hover:scale-105" />
+								</div>
+								<div class="flex min-w-0 flex-col gap-1">
+									<p class="font-heading text-sm font-bold text-journal">
+										{article.kind ?? "Article"} <span aria-hidden="true">·</span> <time datetime={article.date}>{formatDate(article.date)}</time>
+									</p>
+									<h4 class="line-clamp-3 font-heading text-lg leading-tight font-bold tracking-tight">
+										<a href={article.url} class="decoration-journal decoration-2 underline-offset-4 group-hover:underline after:absolute after:inset-0">
+											{article.title}
+										</a>
+									</h4>
+									{article.authors.length > 0 && <p class="line-clamp-1 text-sm">{listNames(article.authors.map((a) => a.name))}</p>}
+								</div>
+							</article>
+						))}
+						<a href={all} class="button button-journal mt-8 self-start">
+							Browse all articles <Icon name="lucide:arrow-right" class="size-5" aria-hidden="true" />
+						</a>
+					</div>
+				</div>
+			) : (
+				<ArticleList
+					articles={articles}
+					style={style === "featured" ? "cards" : style}
+					class={style === "list" ? "max-w-none border-frame border-ink bg-paper px-6 [&>article:last-child]:border-b-0" : undefined}
+				/>
+			)
+		}
 	</div>
 </section>

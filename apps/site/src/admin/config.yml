@@ -76,6 +76,7 @@ collections:
               - { name: subtitle, label: Subtitle, widget: string, required: false }
               - { name: text, label: Text, widget: markdown, required: false }
               - { name: color, label: Colour, widget: select, options: [{ label: Orange (the Center), value: accent }, { label: Journal blue, value: journal }, { label: White on orange (the Blog), value: blog }], default: accent }
+              - { name: stats, label: "Show the journal's numbers (articles, issues, since when)", widget: boolean, default: false, required: false }
               - &buttons
                 name: buttons
                 label: Buttons
@@ -129,7 +130,25 @@ collections:
             fields:
               - { name: title, label: Title, widget: string, default: From the Journal }
               - { name: count, label: How many, widget: number, value_type: int, default: 4, min: 1 }
-              - { name: style, label: Look, widget: select, options: [{ label: Cards with the abstract, value: cards }, { label: Compact list, value: list }], default: cards }
+              - { name: style, label: Look, widget: select, options: [{ label: The newest big with the others beside it, value: featured }, { label: Cards with the abstract, value: cards }, { label: Compact list, value: list }], default: cards }
+          - name: article-types
+            label: Journal article types
+            widget: object
+            summary: "{{title}}"
+            fields:
+              - { name: title, label: Title, widget: string, default: Browse by type }
+              - { name: id, label: "Anchor (link to it with #anchor)", widget: string, required: false }
+              - { name: intro, label: Text under the title, widget: markdown, required: false }
+              - name: types
+                label: A line about each type
+                label_singular: Type
+                widget: list
+                required: false
+                summary: "{{kind}}"
+                hint: Types without a line still show, with their number of articles
+                fields:
+                  - { name: kind, label: "Type, as the journal names it (Empirical, Meta-Research...)", widget: string }
+                  - { name: text, label: Line, widget: string }
           - name: issues
             label: Latest issues
             widget: object
