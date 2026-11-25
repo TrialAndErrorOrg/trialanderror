@@ -1,50 +1,71 @@
 ---
 import type { Section } from "~/content.config";
 import { getArticles, getIssues } from "~/lib/sources/journal";
+import JournalHero from "../JournalHero.astro";
 import Markdown from "../Markdown.astro";
 import SectionHero from "../SectionHero.astro";
 
 type Props = Extract<Section, { type: "hero" }>;
 const { title, subtitle, text, buttons, color, stats } = Astro.props;
 
-// Each line of the title gets its own box, like the old sites' logos
 const lines = title.split("\n").filter(Boolean);
 const journal = color === "journal";
 
-const numbers = stats
-	? await Promise.all([getArticles(), getIssues()]).then(([articles, issues]) => [
-			{ value: articles.length, label: "articles" },
-			{ value: issues.filter((i) => !i.rolling).length, label: "issues" },
-			{ value: articles.at(-1)?.date.slice(0, 4), label: "first published" },
-		])
-	: [];
+// The journal's masthead shows its numbers itself
+const numbers =
+	stats && !journal
+		? await Promise.all([getArticles(), getIssues()]).then(([articles, issues]) => [
+				{ value: articles.length, label: "articles" },
+				{ value: issues.filter((i) => !i.rolling).length, label: "issues" },
+				{ value: articles.at(-1)?.date.slice(0, 4), label: "first published" },
+			])
+		: [];
 ---
 
-<SectionHero lines={lines} color={color}>
-	{subtitle && <p class="font-heading text-2xl leading-tight font-bold tracking-tighter md:text-3xl">{subtitle}</p>}
-	{text && <Markdown text={text} class="text-lg" />}
-	{
-		buttons.length > 0 && (
-			<div class="flex flex-wrap gap-4">
-				{buttons.map((b) => (
-					<a href={b.url} class:list={["button", b.style === "plain" ? "button-plain" : journal && "button-journal"]}>
-						{b.label}
-					</a>
-				))}
-			</div>
-		)
-	}
-	{
-		numbers.length > 0 && (
-			<dl class="grid grid-cols-3 gap-4 border-t-frame border-ink pt-5">
-				{numbers.map((n) => (
-					<div class="flex flex-col-reverse">
-						<dt class="text-sm text-muted">{n.label}</dt>
-						<dd class:list={["font-heading text-3xl leading-none font-black md:text-4xl", journal && "text-journal"]}>{n.value}</dd>
-					</div>
-				))}
-			</dl>
-		)
-	}
-	<slot />
-</SectionHero>
+{
+	journal ? (
+		<JournalHero lines={lines} stats={stats}>
+			{subtitle && <p class="max-w-2xl font-heading text-2xl leading-tight font-bold tracking-tight md:text-3xl">{subtitle}</p>}
+			{text && <Markdown text={text} class="max-w-2xl text-lg text-paper/90" />}
+			{buttons.length > 0 && (
+				<div class="flex flex-wrap gap-4">
+					{buttons.map((b) => (
+						<a
+							href={b.url}
+							class:list={[
+								"button",
+								b.style === "plain" ? "border-paper bg-transparent text-paper shadow-none hover:bg-paper hover:text-journal" : "button-plain text-journal",
+							]}
+						>
+							{b.label}
+						</a>
+					))}
+				</div>
+			)}
+		</JournalHero>
+	) : (
+		<SectionHero lines={lines} color={color}>
+			{subtitle && <p class="font-heading text-2xl leading-tight font-bold tracking-tighter md:text-3xl">{subtitle}</p>}
+			{text && <Markdown text={text} class="text-lg" />}
+			{buttons.length > 0 && (
+				<div class="flex flex-wrap gap-4">
+					{buttons.map((b) => (
+						<a href={b.url} class:list={["button", b.style === "plain" && "button-plain"]}>
+							{b.label}
+						</a>
+					))}
+				</div>
+			)}
+			{numbers.length > 0 && (
+				<dl class="grid grid-cols-3 gap-4 border-t-frame border-ink pt-5">
+					{numbers.map((n) => (
+						<div class="flex flex-col-reverse">
+							<dt class="text-sm text-muted">{n.label}</dt>
+							<dd class="font-heading text-3xl leading-none font-black md:text-4xl">{n.value}</dd>
+						</div>
+					))}
+				</dl>
+			)}
+		</SectionHero>
+	)
+}

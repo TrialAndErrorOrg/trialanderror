@@ -23,4 +23,5 @@ const total = Math.ceil(posts.length / perPage);
 	description={`Everything on ${site.blog.title}, newest first.`}
 	posts={posts.slice((current - 1) * perPage, current * perPage)}
 	page={{ current, total, href: (n) => `/blog/page/${n}` }}
+	current="all"
 />

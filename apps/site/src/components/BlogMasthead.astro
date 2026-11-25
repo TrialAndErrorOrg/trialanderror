@@ -1,0 +1,79 @@
+---
+import { Icon } from "astro-icon/components";
+import { site } from "~/lib/settings";
+import { getCategories } from "~/lib/sources/blog";
+
+/*
+ * The blog's masthead, in black and white like a newspaper's: the name, what
+ * the blog is about, how to follow it, and its categories as a row of
+ * sections. On the front page the name is the page's heading, elsewhere a
+ * smaller link back to the front page.
+ */
+
+interface Props {
+	/** Which link in the row is current: the front page, a category's slug, or the archive */
+	current?: "front" | "all" | string;
+	/** Smaller, for the archive and category pages */
+	compact?: boolean;
+}
+
+const { current = "front", compact = false } = Astro.props;
+const categories = (await getCategories()).filter((c) => c.posts.length > 0);
+const Name = compact ? "a" : "h1";
+const tab = "flex items-center whitespace-nowrap border-r-frame border-ink px-4 py-3 font-heading font-bold transition-colors hover:bg-subtle";
+const on = "bg-ink text-paper hover:bg-ink";
+---
+
+<header class="border-b-frame border-ink bg-paper">
+	<div class:list={["page grid gap-6 md:grid-cols-[auto_1fr] md:items-end md:gap-16", compact ? "py-8 md:py-10" : "pt-12 pb-10 md:pt-16 md:pb-12"]}>
+		<Name href={compact ? "/blog" : undefined} class="flex flex-col items-start font-heading leading-[0.9] font-black tracking-tighter">
+			<span class:list={[compact ? "text-xl md:text-2xl" : "text-3xl md:text-4xl"]}>A Blog of</span>
+			<span class:list={["mt-1 bg-ink px-3 pt-2 pb-1 text-paper", compact ? "text-4xl md:text-5xl" : "text-6xl md:text-8xl"]}>Trial & Error.</span>
+		</Name>
+		<div class="flex max-w-2xl flex-col gap-5">
+			{!compact && <p class="text-lg">{site.blog.description}</p>}
+			<div class="flex flex-wrap gap-3">
+				{
+					site.blog.substack && (
+						<a href={`${site.blog.substack}/subscribe`} class="button bg-ink text-paper">
+							Subscribe <Icon name="lucide:mail" class="size-5" aria-hidden="true" />
+						</a>
+					)
+				}
+				<a href="/rss.xml" class="button button-plain">
+					RSS <Icon name="lucide:rss" class="size-5" aria-hidden="true" />
+				</a>
+				{
+					site.blog.pitchEmail && (
+						<a href={`mailto:${site.blog.pitchEmail}`} class="button button-plain">
+							Pitch a post
+						</a>
+					)
+				}
+			</div>
+		</div>
+	</div>
+	<nav aria-label="Blog sections" class="border-t-frame border-ink">
+		<div class="page">
+		<ul class="flex overflow-x-auto border-l-frame border-ink">
+			<li class="flex">
+				<a href="/blog" class:list={[tab, current === "front" && on]} aria-current={current === "front" ? "page" : undefined}>Front page</a>
+			</li>
+			{
+				categories.map((c) => (
+					<li class="flex">
+						<a href={`/blog/category/${c.slug}`} class:list={[tab, current === c.slug && on]} aria-current={current === c.slug ? "page" : undefined}>
+							{c.title}
+						</a>
+					</li>
+				))
+			}
+			<li class="flex">
+				<a href="/blog/page/1" class:list={[tab, current === "all" && on]} aria-current={current === "all" ? "page" : undefined}>
+					All posts
+				</a>
+			</li>
+		</ul>
+		</div>
+	</nav>
+</header>

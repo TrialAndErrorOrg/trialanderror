@@ -1,9 +1,9 @@
 ---
 import { Icon } from "astro-icon/components";
+import BlogMasthead from "~/components/BlogMasthead.astro";
 import Picture from "~/components/Picture.astro";
 import PostCard from "~/components/PostCard.astro";
 import PostRow from "~/components/PostRow.astro";
-import SectionHero from "~/components/SectionHero.astro";
 import Base from "~/layouts/Base.astro";
 import { formatDate, listNames } from "~/lib/format";
 import { site } from "~/lib/settings";
@@ -41,39 +41,7 @@ const since = posts.at(-1)?.date.slice(0, 4);
 ---
 
 <Base title={site.blog.title} description={site.blog.description}>
-	<SectionHero lines={["A Blog of", "Trial & Error."]} color="blog" compact>
-		<p class="text-lg">{site.blog.description}</p>
-		<ul class="flex flex-wrap gap-2">
-			{
-				categories.map((c) => (
-					<li>
-						<a href={`/blog/category/${c.slug}`} class="label bg-paper hover:bg-accent-soft">
-							{c.title}
-						</a>
-					</li>
-				))
-			}
-		</ul>
-		<div class="flex flex-wrap gap-3">
-			{
-				site.blog.substack && (
-					<a href={`${site.blog.substack}/subscribe`} class="button">
-						Subscribe <Icon name="lucide:mail" class="size-5" aria-hidden="true" />
-					</a>
-				)
-			}
-			<a href="/rss.xml" class="button button-plain">
-				RSS <Icon name="lucide:rss" class="size-5" aria-hidden="true" />
-			</a>
-			{
-				site.blog.pitchEmail && (
-					<a href={`mailto:${site.blog.pitchEmail}`} class="button button-plain">
-						Pitch a post
-					</a>
-				)
-			}
-		</div>
-	</SectionHero>
+	<BlogMasthead />
 
 	<section class="page grid gap-12 py-14 lg:grid-cols-[3fr_2fr]" aria-label="Featured and latest">
 		{
@@ -108,7 +76,7 @@ const since = posts.at(-1)?.date.slice(0, 4);
 
 	{
 		popular.length > 0 && (
-			<section class="border-y-frame border-ink bg-accent-soft py-14">
+			<section class="border-y-frame border-ink bg-subtle py-14">
 				<div class="page">
 					<h2 class="section-title mb-10">Most read</h2>
 					<ol class="grid gap-x-12 gap-y-8 md:grid-cols-2 xl:grid-cols-3">

@@ -9,7 +9,7 @@ const link = z.object({
 	url: z.string().optional(),
 	description: z.string().optional(),
 	/** Section colour for the header tab: accent (orange, default), accent-soft (light orange) or journal (blue) */
-	color: z.enum(["accent", "accent-soft", "journal"]).optional(),
+	color: z.enum(["accent", "accent-soft", "journal", "ink"]).optional(),
 	/** Show as a button instead of a plain link */
 	button: z.boolean().optional(),
 	get children() {

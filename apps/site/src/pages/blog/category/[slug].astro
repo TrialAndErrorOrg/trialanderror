@@ -9,4 +9,4 @@ export const getStaticPaths = (async () =>
 const { term } = Astro.props;
 ---
 
-<BlogList title={term.title} kicker="Category" description={term.description} posts={term.posts} />
+<BlogList title={term.title} kicker="Category" description={term.description} posts={term.posts} current={term.slug} />

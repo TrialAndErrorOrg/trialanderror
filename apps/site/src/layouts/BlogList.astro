@@ -1,7 +1,7 @@
 ---
+import BlogMasthead from "~/components/BlogMasthead.astro";
 import Pagination from "~/components/Pagination.astro";
 import PostList from "~/components/PostList.astro";
-import { site } from "~/lib/settings";
 import type { Post } from "~/lib/types";
 import Base from "./Base.astro";
 
@@ -13,20 +13,20 @@ interface Props {
 	posts: Post[];
 	page?: { current: number; total: number; href: (n: number) => string };
 	featureFirst?: boolean;
+	/** The masthead link to mark: a category's slug, or "all" for the archive */
+	current?: string;
 }
 
-const { title, kicker, description, posts, page, featureFirst = false } = Astro.props;
+const { title, kicker, description, posts, page, featureFirst = false, current } = Astro.props;
 ---
 
 <Base title={title} description={description}>
-	<div class="border-b-frame border-ink bg-accent">
-		<div class="page flex flex-col gap-5 py-12 md:py-16">
-			<a href="/blog" class="self-start font-heading font-bold underline-offset-4 hover:underline">← {site.blog.title}</a>
-			{kicker && <p class="label self-start bg-paper">{kicker}</p>}
-			<h1 class="self-start border-heavy border-ink bg-paper px-4 pt-3 pb-1 font-heading text-5xl leading-none font-black tracking-tighter md:px-6 md:text-7xl">{title}</h1>
-			{description && <p class="max-w-3xl text-lg font-medium md:text-xl">{description}</p>}
-			<slot name="header" />
-		</div>
+	<BlogMasthead current={current} compact />
+	<div class="page flex flex-col gap-4 pt-12">
+		{kicker && <p class="font-heading text-sm font-bold tracking-widest text-muted uppercase">{kicker}</p>}
+		<h1 class="font-heading text-5xl leading-none font-black tracking-tighter md:text-7xl">{title}</h1>
+		{description && <p class="max-w-3xl text-lg md:text-xl">{description}</p>}
+		<slot name="header" />
 	</div>
 	<div class="page py-12">
 		<slot />

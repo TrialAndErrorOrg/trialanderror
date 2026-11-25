@@ -1,7 +1,8 @@
 /*
  * The site's three parts, each with its own name and colour, as on the old
- * sites: the Center in orange, the Journal in blue and the Blog in white.
- * The header and footer show the part the reader is in.
+ * sites: the Center in orange, the Journal in blue and the Blog in black and
+ * white. The header and footer show the part the reader is in. The name always
+ * links to the homepage: the header's tabs lead to each part's front page.
  */
 
 export type SiteSection = "center" | "journal" | "blog";
@@ -9,7 +10,7 @@ export type SiteSection = "center" | "journal" | "blog";
 export interface Brand {
 	/** The name, one box per line */
 	lines: [string, string];
-	/** Where the name links to */
+	/** The part's front page */
 	href: string;
 	/** Classes for the name's box */
 	box: string;
@@ -20,7 +21,7 @@ export interface Brand {
 export const BRANDS: Record<SiteSection, Brand> = {
 	center: { lines: ["Center of", "Trial & Error"], href: "/", box: "bg-accent text-ink", soft: "bg-accent-soft" },
 	journal: { lines: ["Journal of", "Trial & Error"], href: "/journal", box: "bg-journal text-paper", soft: "bg-journal-soft" },
-	blog: { lines: ["A Blog of", "Trial & Error"], href: "/blog", box: "bg-paper text-ink", soft: "bg-accent-soft" },
+	blog: { lines: ["A Blog of", "Trial & Error"], href: "/blog", box: "bg-ink text-paper", soft: "bg-subtle" },
 };
 
 /** The part of the site a path belongs to. The archived JRN is the Center's, not the Journal's */

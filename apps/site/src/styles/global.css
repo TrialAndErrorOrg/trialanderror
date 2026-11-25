@@ -95,6 +95,10 @@
 	.tab[data-color="accent-soft"] {
 		--tab: var(--color-accent-soft);
 	}
+	.tab[data-color="ink"] {
+		--tab: var(--color-ink);
+		--tab-text: var(--color-paper);
+	}
 	.tab[data-color="journal"] {
 		--tab: var(--color-journal);
 		--tab-text: var(--color-paper);

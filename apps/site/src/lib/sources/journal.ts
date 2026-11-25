@@ -51,6 +51,8 @@ export interface JournalConfig {
 	notice?: string;
 	/** The online ISSN, for Google Scholar's citation_issn */
 	issn?: string;
+	/** Indexes that list the journal, shown on its front page */
+	indexedIn?: { name: string; url: string; since?: string }[];
 }
 
 export const JOURNALS = {
@@ -82,6 +84,7 @@ export const JOURNALS = {
 		issueUrl: (slug) => `/journal/issue/${slug}`,
 		section: "Journal",
 		issn: "2667-1204",
+		indexedIn: [{ name: "DOAJ", url: "https://doaj.org/toc/2667-1204", since: "2025" }],
 	},
 	// The Center's earlier journal, published 2020 to 2023 and kept online as an archive.
 	// Its title and description are those of its PubPub community

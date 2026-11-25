@@ -5,7 +5,7 @@ import Logo from "./Logo.astro";
 /*
  * The name of the part of the site the reader is in, in its colour, with the
  * other two parts' boxes peeking out behind it, like the stacked logos of
- * the old Center, Journal and Blog sites.
+ * the old Center, Journal and Blog sites. It always leads home.
  */
 
 interface Props {
@@ -21,9 +21,10 @@ const [first, second] = behind(section);
 ---
 
 <a
-	href={brand.href}
+	href="/"
 	class:list={["group/brand relative isolate inline-flex shrink-0 items-center", large ? "mt-3 mr-5" : "mt-2 mr-3", className]}
-	aria-label={brand.lines.join(" ")}
+	aria-label={section === "center" ? "Center of Trial & Error, home" : `${brand.lines.join(" ")}, part of the Center of Trial & Error: home`}
+	title="Home"
 >
 	<span
 		class:list={[

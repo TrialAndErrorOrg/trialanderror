@@ -15,9 +15,9 @@ interface Props {
 
 const { lines, color = "accent", compact = false } = Astro.props;
 const looks = {
-	accent: { band: "bg-accent-soft", box: "bg-accent" },
+	accent: { band: "bg-accent", box: "bg-paper" },
 	journal: { band: "bg-journal-soft", box: "bg-journal text-paper" },
-	blog: { band: "bg-accent", box: "bg-paper" },
+	blog: { band: "bg-subtle", box: "bg-ink text-paper" },
 };
 const look = looks[color];
 ---

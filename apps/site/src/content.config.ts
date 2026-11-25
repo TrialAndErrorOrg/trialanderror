@@ -109,7 +109,7 @@ const section = z.discriminatedUnion("type", [
 		subtitle: z.string().optional(),
 		text: z.string().optional(),
 		buttons: z.array(button).default([]),
-		/** accent: orange boxes (the Center), journal: blue boxes, blog: white boxes on orange */
+		/** accent: white boxes on orange (the Center), journal: the journal's blue masthead, blog: black boxes on grey */
 		color: z.enum(["accent", "journal", "blog"]).default("accent"),
 		/** Show the journal's numbers (articles, issues, first year) under the text */
 		stats: z.boolean().default(false),

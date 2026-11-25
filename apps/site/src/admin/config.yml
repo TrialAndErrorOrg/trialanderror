@@ -75,7 +75,7 @@ collections:
               - { name: title, label: Title (each line gets its own box), widget: text }
               - { name: subtitle, label: Subtitle, widget: string, required: false }
               - { name: text, label: Text, widget: markdown, required: false }
-              - { name: color, label: Colour, widget: select, options: [{ label: Orange (the Center), value: accent }, { label: Journal blue, value: journal }, { label: White on orange (the Blog), value: blog }], default: accent }
+              - { name: color, label: Colour, widget: select, options: [{ label: Orange (the Center), value: accent }, { label: Journal blue, value: journal }, { label: Black and white (the Blog), value: blog }], default: accent }
               - { name: stats, label: "Show the journal's numbers (articles, issues, since when)", widget: boolean, default: false, required: false }
               - &buttons
                 name: buttons
@@ -109,7 +109,7 @@ collections:
                 fields:
                   - { name: title, label: Title, widget: string }
                   - { name: body, label: Text, widget: markdown }
-                  - { name: color, label: Colour, widget: select, required: false, options: [{ label: "Orange (the Center)", value: accent }, { label: Journal blue, value: journal }, { label: White on orange (the Blog), value: blog }] }
+                  - { name: color, label: Colour, widget: select, required: false, options: [{ label: "Orange (the Center)", value: accent }, { label: Journal blue, value: journal }, { label: Black and white (the Blog), value: blog }] }
                   - name: link
                     label: Link
                     widget: object
@@ -568,7 +568,7 @@ collections:
               - { name: title, label: Title, widget: string }
               - { name: url, label: Link (leave empty for a dropdown), widget: string, required: false }
               - { name: description, label: Description, widget: string, required: false }
-              - { name: color, label: Tab colour, widget: select, options: [{ label: Orange, value: accent }, { label: Light orange, value: accent-soft }, { label: Journal blue, value: journal }], required: false }
+              - { name: color, label: Tab colour, widget: select, options: [{ label: Orange, value: accent }, { label: Light orange, value: accent-soft }, { label: Journal blue, value: journal }, { label: Black, value: ink }], required: false }
               - name: children
                 label: Dropdown links
                 widget: list
