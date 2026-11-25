@@ -2,7 +2,7 @@ import { inferRemoteSize } from "astro:assets";
 import { stripHtml } from "../format";
 import { type NavLink, navigation, site } from "../settings";
 import type { Article, Picture, Term } from "../types";
-import { fetchFileText, fileResponse, fileUrl, getCollection, type UnderlayFile } from "./underlay";
+import { assetHash, fetchFileText, fileResponse, fileUrl, getCollection, type UnderlayFile } from "./underlay";
 
 /*
  * Journal articles, read from each journal's PubPub export on Underlay:
@@ -190,7 +190,7 @@ function createJournal(config: JournalConfig) {
 	const journalFileUrl = (file: UnderlayFile) => fileUrl(owner, collection, file);
 	/** Where a download is served on this site, see src/pages/journal/files */
 	const downloadUrl = (file: UnderlayFile) => {
-		const hash = file.$file.replace(/^sha256:/, "");
+		const hash = assetHash(file);
 		return `${config.path}/files/${hash}/${encodeURIComponent(file.fileName ?? hash)}`;
 	};
 	const serveFile = (hash: string, name: string) => fileResponse(owner, collection, hash, name);
