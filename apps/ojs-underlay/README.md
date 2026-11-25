@@ -152,8 +152,16 @@ then family name, so a reordering shows as "author order" and not as wrong names
   private.
 
 A push reads the head's manifest, sends only records whose hash changed (`src/underlay/hash.ts`
-reproduces Underlay's record hashes exactly), uploads only the files Underlay doesn't hold, and
-keeps the head's other types and their schemas. Deletes happen only with `--prune`.
+reproduces Underlay's record hashes exactly, checked against all 724 records of `jote` v2.2.0),
+uploads only the files Underlay doesn't hold, and keeps the head's other types and their
+schemas. Deletes happen only with `--prune`.
+
+The key needs the **write** scope. A read key gets 403 when the collection is created. Either
+use an unconfined write key (it creates the collection on the first push), or create the
+collection on underlay.org first, private, and then a write key confined to it at
+`https://www.underlay.org/centeroftrialanderror/settings/keys` (a confined key can't create
+collections). The push is covered by a test against a fake Underlay
+(`src/underlay/client.test.ts`), but has not run against the real one yet.
 
 ### Handing over `jote`
 

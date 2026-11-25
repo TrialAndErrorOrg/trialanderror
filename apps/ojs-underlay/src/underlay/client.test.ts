@@ -11,49 +11,51 @@ function fakeUnderlay(state: {
   const calls: { method: string; path: string; body?: string }[] = []
   const json = (body: unknown, status = 200) =>
     new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
-  const fetch = vi.fn(async (input: string | URL, init: RequestInit = {}) => {
-    const url = new URL(String(input))
-    const path = url.pathname.replace('/api/collections/org/scratch', '')
-    const method = init.method ?? 'GET'
-    calls.push({ method, path, body: typeof init.body === 'string' ? init.body : undefined })
-    if (method === 'GET' && path === '') {
-      return state.exists
-        ? json({ public: state.public ?? false })
-        : json({ error: 'Not found' }, 404)
-    }
-    if (method === 'POST' && url.pathname === '/api/accounts/org/collections')
-      return json({ slug: 'scratch' }, 201)
-    if (path === '/versions/latest') {
-      return state.head
-        ? json({ semver: state.head.semver, appId: state.head.appId })
-        : json({}, 404)
-    }
-    if (path.endsWith('/manifest')) {
-      return json({
-        schemas: {},
-        records: state.head!.records.map((r) => ({
-          id: r.id,
-          type: r.type,
-          hash: `ul:rec:${hashRecord(r)}`,
-        })),
-        pagination: { hasMore: false },
-      })
-    }
-    if (path === '/schemas') return json({ schemas: [] })
-    if (method === 'POST' && path === '/push')
-      return json({ session_id: 's1', needed_assets: [sha256('pdf')], limits: {} })
-    if (method === 'PUT' && path.startsWith('/assets/')) return json({ status: 'stored' }, 201)
-    if (path.startsWith('/push/s1/records') || path.startsWith('/push/s1/deletes'))
-      return json({ received: 1 })
-    if (path === '/push/s1/commit') return json({ session_id: 's1', status: 'committing' }, 202)
-    if (method === 'GET' && path === '/push/s1') {
-      return json({
-        status: 'committed',
-        result: { semver: 'v1.0.0', hash: 'ul:ver:x', recordCount: 2 },
-      })
-    }
-    return json({ error: `unexpected ${method} ${path}` }, 500)
-  })
+  const fetch = vi.fn<(input: string | URL, init?: RequestInit) => Promise<Response>>(
+    async (input, init = {}) => {
+      const url = new URL(String(input))
+      const path = url.pathname.replace('/api/collections/org/scratch', '')
+      const method = init.method ?? 'GET'
+      calls.push({ method, path, body: typeof init.body === 'string' ? init.body : undefined })
+      if (method === 'GET' && path === '') {
+        return state.exists
+          ? json({ public: state.public ?? false })
+          : json({ error: 'Not found' }, 404)
+      }
+      if (method === 'POST' && url.pathname === '/api/accounts/org/collections')
+        return json({ slug: 'scratch' }, 201)
+      if (path === '/versions/latest') {
+        return state.head
+          ? json({ semver: state.head.semver, appId: state.head.appId })
+          : json({}, 404)
+      }
+      if (path.endsWith('/manifest')) {
+        return json({
+          schemas: {},
+          records: state.head!.records.map((r) => ({
+            id: r.id,
+            type: r.type,
+            hash: `ul:rec:${hashRecord(r)}`,
+          })),
+          pagination: { hasMore: false },
+        })
+      }
+      if (path === '/schemas') return json({ schemas: [] })
+      if (method === 'POST' && path === '/push')
+        return json({ session_id: 's1', needed_assets: [sha256('pdf')], limits: {} })
+      if (method === 'PUT' && path.startsWith('/assets/')) return json({ status: 'stored' }, 201)
+      if (path.startsWith('/push/s1/records') || path.startsWith('/push/s1/deletes'))
+        return json({ received: 1 })
+      if (path === '/push/s1/commit') return json({ session_id: 's1', status: 'committing' }, 202)
+      if (method === 'GET' && path === '/push/s1') {
+        return json({
+          status: 'committed',
+          result: { semver: 'v1.0.0', hash: 'ul:ver:x', recordCount: 2 },
+        })
+      }
+      return json({ error: `unexpected ${method} ${path}` }, 500)
+    },
+  )
   vi.stubGlobal('fetch', fetch)
   return calls
 }
