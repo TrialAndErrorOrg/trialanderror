@@ -65,3 +65,11 @@ export async function getTerms(kind: "category" | "tags") {
 	}
 	return [...terms.values()];
 }
+
+/** Categories with their posts, newest first, and the description /admin gives them */
+export async function getCategories() {
+	const [terms, s] = await Promise.all([getTerms("category"), source()]);
+	const info: { slug: string; description?: string }[] = "getCategories" in s ? await s.getCategories() : [];
+	const descriptions = new Map(info.map((c) => [c.slug, c.description]));
+	return terms.map((term) => ({ ...term, description: descriptions.get(term.slug) }));
+}

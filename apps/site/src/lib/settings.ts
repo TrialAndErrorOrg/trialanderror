@@ -29,6 +29,10 @@ const siteSchema = z.object({
 		description: z.string(),
 		postsPerPage: z.number().int().positive(),
 		pitchEmail: z.string().optional(),
+		/** The blog's Substack, where readers subscribe and comment */
+		substack: z.url().optional(),
+		/** Slugs of the most read posts, for when Umami can't be asked */
+		popular: z.array(z.string()).default([]),
 	}),
 	journal: z.object({
 		title: z.string(),

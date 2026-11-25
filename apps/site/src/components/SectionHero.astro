@@ -1,0 +1,38 @@
+---
+/*
+ * The big name at the top of the Center's, the Journal's and the Blog's front
+ * pages: one box per line, offset like the old sites' logos, with a framed
+ * card beside it. The three share it so they look like parts of one site.
+ */
+
+interface Props {
+	/** One box per line */
+	lines: string[];
+	color?: "accent" | "journal" | "blog";
+	/** Less padding, for pages where the content should start sooner */
+	compact?: boolean;
+}
+
+const { lines, color = "accent", compact = false } = Astro.props;
+const looks = {
+	accent: { band: "bg-accent-soft", box: "bg-accent" },
+	journal: { band: "bg-journal-soft", box: "bg-journal text-paper" },
+	blog: { band: "bg-accent", box: "bg-paper" },
+};
+const look = looks[color];
+---
+
+<section class:list={["border-b-frame border-ink", look.band]}>
+	<div class:list={["page grid gap-10 md:grid-cols-[3fr_2fr] md:items-center", compact ? "py-12 md:py-16" : "py-16 md:py-28"]}>
+		<h1 class:list={["flex flex-col items-start font-heading leading-none font-black tracking-tighter", compact ? "text-5xl md:text-6xl xl:text-7xl" : "text-5xl md:text-7xl xl:text-8xl"]}>
+			{
+				lines.map((line, i) => (
+					<span class:list={["border-heavy border-ink px-4 pt-3 pb-1 md:px-6", look.box, i > 0 && "-mt-[var(--heavy)]", i % 2 === 1 && "ml-6 md:ml-16"]}>{line}</span>
+				))
+			}
+		</h1>
+		<div class="flex flex-col gap-6 border-frame border-ink bg-paper p-6 shadow-hard-lg md:p-8">
+			<slot />
+		</div>
+	</div>
+</section>

@@ -8,6 +8,7 @@ import { formatDate, readingMinutes } from "~/lib/format";
 import { prepareBody } from "~/lib/html";
 import { personHref } from "~/lib/people";
 import { site } from "~/lib/settings";
+import { getSubstackDiscussion } from "~/lib/sources/substack";
 import type { Post } from "~/lib/types";
 import Base from "./Base.astro";
 
@@ -29,6 +30,9 @@ const share = [
 	{ icon: "linkedin", label: "Share on LinkedIn", href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}` },
 	{ icon: "email", label: "Share by email", href: `mailto:?subject=${encodeURIComponent(post.title)}&body=${encodeURIComponent(url)}` },
 ];
+
+// Readers comment on the post's copy on Substack
+const discussion = post.substack && !draft ? await getSubstackDiscussion(post.substack) : undefined;
 
 // Drafts render on request, so link to the author's own slug rather than look everyone up
 const authorLinks = await Promise.all(post.authors.map((author) => personHref(author, Astro.isPrerendered)));
@@ -164,6 +168,45 @@ const meta = {
 								<PersonCard person={person} />
 							))}
 						</div>
+					</section>
+				)
+			}
+			{
+				discussion && (
+					<section id="discussion" class="flex flex-col gap-5 border-frame border-ink bg-accent-soft p-6 shadow-hard md:p-8">
+						<div class="flex flex-wrap items-baseline justify-between gap-3">
+							<h2 class="font-heading text-3xl font-black">Discussion</h2>
+							{discussion.count > 0 && (
+								<span class="font-semibold">
+									{discussion.count} {discussion.count === 1 ? "comment" : "comments"} on Substack
+								</span>
+							)}
+						</div>
+						{discussion.comments.length > 0 ? (
+							<ul class="flex flex-col gap-4">
+								{discussion.comments.map((comment) => (
+									<li class="flex flex-col gap-2 border-frame border-ink bg-paper p-4">
+										<p class="text-sm">
+											<span class="font-bold">{comment.name}</span>
+											{comment.date && (
+												<>
+													<span aria-hidden="true"> · </span>
+													<time datetime={comment.date} class="text-muted">{formatDate(comment.date)}</time>
+												</>
+											)}
+										</p>
+										<p class="line-clamp-6 whitespace-pre-line">{comment.body}</p>
+										{comment.replies > 0 && <p class="text-sm text-muted">{comment.replies} {comment.replies === 1 ? "reply" : "replies"}</p>}
+									</li>
+								))}
+							</ul>
+						) : (
+							<p>This post is also on our Substack. Questions, objections and your own stories of trial and error are welcome there.</p>
+						)}
+						<a href={discussion.url} class="button self-start">
+							{discussion.count > 0 ? "Read and join the discussion" : "Start the discussion"} on Substack
+							<Icon name="lucide:arrow-up-right" class="size-5" aria-hidden="true" />
+						</a>
 					</section>
 				)
 			}

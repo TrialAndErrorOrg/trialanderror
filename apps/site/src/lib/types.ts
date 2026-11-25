@@ -52,6 +52,10 @@ export interface Post {
 	authors: Person[];
 	description?: string;
 	related: string[];
+	/** Shown big at the top of the blog's front page */
+	featured?: boolean;
+	/** The same post on Substack, where readers comment on it */
+	substack?: string;
 }
 
 export interface Article {

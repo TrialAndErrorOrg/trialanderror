@@ -75,7 +75,7 @@ collections:
               - { name: title, label: Title (each line gets its own box), widget: text }
               - { name: subtitle, label: Subtitle, widget: string, required: false }
               - { name: text, label: Text, widget: markdown, required: false }
-              - { name: color, label: Colour, widget: select, options: [{ label: Orange, value: accent }, { label: Journal blue, value: journal }], default: accent }
+              - { name: color, label: Colour, widget: select, options: [{ label: Orange (the Center), value: accent }, { label: Journal blue, value: journal }, { label: White on orange (the Blog), value: blog }], default: accent }
               - &buttons
                 name: buttons
                 label: Buttons
@@ -364,6 +364,8 @@ collections:
       - { name: doi, label: DOI, widget: string, required: false, hint: "Only the DOI, like 10.36850/abcd-1234" }
       - { name: related, label: Related posts, widget: relation, collection: blog, value_field: "{{slug}}", search_fields: [title], display_fields: [title], multiple: true, required: false }
       - { name: description, label: Description for search engines (if not the excerpt), widget: text, required: false }
+      - { name: featured, label: Featured (big at the top of the blog's front page), widget: boolean, default: false, required: false }
+      - { name: substack, label: The post on Substack (its address), widget: string, required: false, hint: "Readers are sent there to comment, like https://centeroftrialanderror.substack.com/p/..." }
 
   - name: people
     label: People
@@ -410,6 +412,7 @@ collections:
     identifier_field: title
     fields:
       - { name: title, label: Name, widget: string }
+      - { name: description, label: One line about the category, widget: string, required: false }
 
   - name: settings
     label: Settings
@@ -432,6 +435,8 @@ collections:
               - { name: description, label: Description, widget: text }
               - { name: postsPerPage, label: Posts per page, widget: number, value_type: int }
               - { name: pitchEmail, label: Email for blog pitches, widget: string, required: false }
+              - { name: substack, label: Substack address, widget: string, required: false, hint: "Where readers subscribe, like https://centeroftrialanderror.substack.com" }
+              - { name: popular, label: "Most read (used when the analytics can't be reached)", widget: relation, collection: blog, value_field: "{{slug}}", search_fields: [title], display_fields: [title], multiple: true, required: false }
           - name: journal
             label: Journal
             widget: object

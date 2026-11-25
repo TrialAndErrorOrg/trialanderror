@@ -106,7 +106,8 @@ const section = z.discriminatedUnion("type", [
 		subtitle: z.string().optional(),
 		text: z.string().optional(),
 		buttons: z.array(button).default([]),
-		color: z.enum(["accent", "journal"]).default("accent"),
+		/** accent: orange boxes (the Center), journal: blue boxes, blog: white boxes on orange */
+		color: z.enum(["accent", "journal", "blog"]).default("accent"),
 	}),
 	z.object({
 		type: z.literal("text"),
@@ -229,6 +230,10 @@ const blog = defineCollection({
 		authors: z.array(z.string()).default([]),
 		doi: z.string().optional(),
 		related: z.array(z.string()).default([]),
+		/** Shown big at the top of the blog's front page, the newest featured post first */
+		featured: z.boolean().default(false),
+		/** The same post on Substack, where readers comment on it */
+		substack: z.url().optional(),
 	}),
 });
 
@@ -254,7 +259,11 @@ const people = defineCollection({
 
 const categories = defineCollection({
 	loader: glob({ pattern: "**/*.yaml", base: `${contentDir}/categories` }),
-	schema: z.object({ title: z.string() }),
+	schema: z.object({
+		title: z.string(),
+		/** A line under the category's name on the blog's front page and its own page */
+		description: z.string().optional(),
+	}),
 });
 
 export const collections = { pages, blog, people, categories };

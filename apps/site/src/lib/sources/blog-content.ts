@@ -80,9 +80,16 @@ export async function getPosts(): Promise<Post[]> {
 				authors,
 				description: data.description ?? data.excerpt,
 				related: data.related,
+				featured: data.featured,
+				substack: data.substack,
 			};
 		}),
 	);
+}
+
+/** Blog categories with their descriptions, in /admin's order (by file name) */
+export async function getCategories() {
+	return (await getCollection("categories")).map((c) => ({ slug: c.id, title: c.data.title, description: c.data.description }));
 }
 
 /** Team members, by last name */
