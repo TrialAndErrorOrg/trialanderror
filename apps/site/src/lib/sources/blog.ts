@@ -69,7 +69,7 @@ export async function getTerms(kind: "category" | "tags") {
 /** Categories with their posts, newest first, and the description /admin gives them */
 export async function getCategories() {
 	const [terms, s] = await Promise.all([getTerms("category"), source()]);
-	const info: { slug: string; description?: string }[] = "getCategories" in s ? await s.getCategories() : [];
+	const info = "getCategories" in s ? await (s.getCategories as () => Promise<{ slug: string; description?: string }[]>)() : [];
 	const descriptions = new Map(info.map((c) => [c.slug, c.description]));
 	return terms.map((term) => ({ ...term, description: descriptions.get(term.slug) }));
 }
@@ -77,5 +77,5 @@ export async function getCategories() {
 /** The journal's editorial board, from site-content's people (people with a `journal` role) */
 export async function getEditorialBoard(): Promise<Person[]> {
 	const s = await source();
-	return "getEditorialBoard" in s ? s.getEditorialBoard() : [];
+	return "getEditorialBoard" in s ? (s.getEditorialBoard as () => Promise<Person[]>)() : [];
 }
