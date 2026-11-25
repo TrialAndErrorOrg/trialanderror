@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    // Run by Node directly (type stripping), so imports name the .ts file
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "declaration": false,
+    "declarationMap": false
+  },
+  "include": ["src"]
+}
