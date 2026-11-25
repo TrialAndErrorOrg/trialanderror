@@ -1,0 +1,16 @@
+{
+  "name": "ojs-underlay",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Export JOTE's articles from OJS to Underlay records in the shape the site reads, matched against the PubPub export",
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "bin": {
+    "ojs-underlay": "./src/cli.ts"
+  },
+  "scripts": {
+    "start": "node src/cli.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  }
+}

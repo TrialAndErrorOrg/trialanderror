@@ -1,0 +1,3 @@
+# Records, reports and downloaded files from a run
+out/
+.env
