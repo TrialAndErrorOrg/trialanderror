@@ -120,6 +120,15 @@ to GitHub.
 - The old blog's page list (`blog.trialanderror.org/blog/2`) would land on
   `/blog/blog/2`; redirect `/blog/blog/*` to `/blog/page/*` if that matters.
 
+- The journal's PubPub addresses on `journal.trialanderror.org`: send
+  `/pub/*` and `/collection/*` on that domain to this server. The site
+  answers them itself with permanent (301) redirects: `/pub/<slug>` and
+  `/pub/<slug>/release/<n>` to `/journal/<slug>`, `/pub/<slug>/download/pdf`
+  to the article's PDF, `/collection/<slug>` to `/journal/issue/<slug>`
+  (`src/pages/pub`, `src/pages/collection`). Send the rest of the domain to
+  `trialanderror.org/journal/*`. Ask Crossref to update the DOIs to the new
+  addresses as well, so they don't go through the redirect.
+
 ## Elsewhere
 
 Any host that runs Node or Docker works: give it `OP_TOKEN`, or the variables

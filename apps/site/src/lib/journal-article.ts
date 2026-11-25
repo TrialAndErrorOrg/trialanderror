@@ -100,6 +100,12 @@ function downloads(release: Release | undefined, downloadUrl: FileUrl): Download
 	return [{ format: "pdf", label: "PDF", url: downloadUrl(release.formatted) }, ...files.filter((file) => file.format !== "pdf")];
 }
 
+/** Where an article's PDF is served on this site, the typeset one when there is one */
+export async function articlePdfUrl(article: Article, source: Journal = journal()) {
+	const release = await source.getRelease(article);
+	return downloads(release, source.downloadUrl).find((d) => d.format === "pdf")?.url;
+}
+
 /** Warm the download cache for every article at once, instead of one page at a time */
 export const prefetchArticles = async (articles: Article[], source: Journal = journal()) => {
 	await Promise.all(articles.map((article) => source.getArticleHtml(article).catch(() => undefined)));
