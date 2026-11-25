@@ -9,6 +9,7 @@ import SocialIcon from "~/components/SocialIcon.astro";
 import { formatDate, listNames } from "~/lib/format";
 import type { ArticleDetails } from "~/lib/journal-article";
 import { type Journal, journal as defaultJournal } from "~/lib/sources/journal";
+import { site } from "~/lib/settings";
 import type { Article } from "~/lib/types";
 import "~/styles/journal.css";
 import Base from "./Base.astro";
@@ -49,6 +50,8 @@ const meta = {
 	citation_publication_date: date,
 	citation_online_date: date,
 	citation_journal_title: config.title,
+	citation_issn: config.issn,
+	citation_publisher: site.name,
 	citation_volume: volume,
 	citation_issue: issue,
 	citation_doi: article.doi,

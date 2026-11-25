@@ -49,6 +49,8 @@ export interface JournalConfig {
 	theme?: string;
 	/** Shown on the list pages of a journal that is no longer updated */
 	notice?: string;
+	/** The online ISSN, for Google Scholar's citation_issn */
+	issn?: string;
 }
 
 export const JOURNALS = {
@@ -79,6 +81,7 @@ export const JOURNALS = {
 		menu: navigation.journal,
 		issueUrl: (slug) => `/journal/issue/${slug}`,
 		section: "Journal",
+		issn: "2667-1204",
 	},
 	// The Center's earlier journal, published 2020 to 2023 and kept online as an archive.
 	// Its title and description are those of its PubPub community

@@ -20,7 +20,8 @@ under People first (Team member off).
 **Featured** puts a post big at the top of the blog's front page (the newest
 featured one wins, otherwise the newest post). When the post is also on
 Substack, paste its address in **The post on Substack**: the post then ends
-with its Substack comments and a link to join the discussion there.
+with the number of comments it has there and a link to join the discussion.
+Substack's terms don't allow copying the comments themselves onto the site.
 
 The blog's front page lists the most read posts. They come from Umami when the
 build has `UMAMI_USERNAME` and `UMAMI_PASSWORD`, and otherwise from **Settings →

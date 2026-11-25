@@ -37,17 +37,23 @@ const discussion = post.substack && !draft ? await getSubstackDiscussion(post.su
 // Drafts render on request, so link to the author's own slug rather than look everyone up
 const authorLinks = await Promise.all(post.authors.map((author) => personHref(author, Astro.isPrerendered)));
 
-// Scholarly metadata, read by Google Scholar and Zotero
+// Scholarly metadata, read by Google Scholar and Zotero. Only posts with a DOI
+// get the citation_* tags, so Scholar doesn't take every post for a paper
 const names = post.authors.map((a) => a.name);
+const citation = post.doi
+	? {
+			citation_title: post.title,
+			citation_author: names,
+			citation_publication_date: post.date.slice(0, 10).replaceAll("-", "/"),
+			citation_journal_title: site.blog.title,
+			citation_publisher: site.name,
+			citation_fulltext_html_url: url,
+			citation_doi: post.doi,
+			citation_keywords: post.tags.map((t) => t.title),
+		}
+	: {};
 const meta = {
-	citation_title: post.title,
-	citation_author: names,
-	citation_publication_date: post.date.slice(0, 10).replaceAll("-", "/"),
-	citation_journal_title: site.blog.title,
-	citation_publisher: site.name,
-	citation_fulltext_html_url: url,
-	citation_doi: post.doi,
-	citation_keywords: post.tags.map((t) => t.title),
+	...citation,
 	"dc.title": post.title,
 	"dc.creator": names,
 	"dc.date": post.date,
@@ -182,27 +188,11 @@ const meta = {
 								</span>
 							)}
 						</div>
-						{discussion.comments.length > 0 ? (
-							<ul class="flex flex-col gap-4">
-								{discussion.comments.map((comment) => (
-									<li class="flex flex-col gap-2 border-frame border-ink bg-paper p-4">
-										<p class="text-sm">
-											<span class="font-bold">{comment.name}</span>
-											{comment.date && (
-												<>
-													<span aria-hidden="true"> · </span>
-													<time datetime={comment.date} class="text-muted">{formatDate(comment.date)}</time>
-												</>
-											)}
-										</p>
-										<p class="line-clamp-6 whitespace-pre-line">{comment.body}</p>
-										{comment.replies > 0 && <p class="text-sm text-muted">{comment.replies} {comment.replies === 1 ? "reply" : "replies"}</p>}
-									</li>
-								))}
-							</ul>
-						) : (
-							<p>This post is also on our Substack. Questions, objections and your own stories of trial and error are welcome there.</p>
-						)}
+						<p>
+							{discussion.count > 0
+								? "Readers are discussing this post on our Substack. Questions, objections and your own stories of trial and error are welcome there."
+								: "This post is also on our Substack. Questions, objections and your own stories of trial and error are welcome there."}
+						</p>
 						<a href={discussion.url} class="button self-start">
 							{discussion.count > 0 ? "Read and join the discussion" : "Start the discussion"} on Substack
 							<Icon name="lucide:arrow-up-right" class="size-5" aria-hidden="true" />

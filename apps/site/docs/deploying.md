@@ -114,7 +114,12 @@ to GitHub.
 ## Redirects to set up when this goes live
 
 - `blog.trialanderror.org/*` → `trialanderror.org/blog/*` (keeps old links and
-  blog DOIs working; `/blog/api/draft` exists for the old preview URL).
+  blog DOIs working; `/blog/api/draft` exists for the old preview URL). A
+  plain rule like this breaks the old blog's lists: `/blog/<n>` should go to
+  `/blog/page/<n>`, `/blog/<category>` to `/blog/category/<category>` and
+  `/author/<slug>` to `/people/<slug>`. The research note of 2026-11-25 in the
+  planning repo (cote/center) has a Caddyfile for one redirect-only service
+  that owns all the old host names, with `redir ... permanent` inside `handle`.
 - `blog.trialanderror.org/author/*` → `trialanderror.org/blog/author/*` falls
   out of the rule above.
 - The old blog's page list (`blog.trialanderror.org/blog/2`) would land on
